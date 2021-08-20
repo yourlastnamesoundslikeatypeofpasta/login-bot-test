@@ -1,6 +1,7 @@
 import os
 
 from slack_bolt import App
+from slack_sdk.errors import SlackApiError
 
 from scripts.command_score import bonus_score
 from scripts.command_score import find_stats
@@ -16,6 +17,53 @@ def get_error_msg_str(command_name):
     :return: str
     """
     return f'`Error: Stats not entered correctly. Enter: "/{command_name} help" for help`'
+
+
+# Listen to the app_home_opened Events API event to hear when a user opens your app from the sidebar
+@app.event("app_home_opened")
+def app_home_opened(event, client, logger):
+    user = event["user"]
+
+    try:
+        # Call the views.publish method using the WebClient passed to listeners
+        result = client.views_publish(
+            user_id=user,
+            view={
+                # Home tabs must be enabled in your app configuration page under "App Home"
+                # and your app must be subscribed to the app_home_opened event
+                "type": "home",
+                "blocks": [
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": f"*Welcome home, <@{user}> :house:*",
+                        },
+                    },
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "Learn how home tabs can be more useful and interactive <https://api.slack.com/surfaces/tabs/using|*in the documentation*>.",
+                        },
+                    },
+                    {"type": "divider"},
+                    {
+                        "type": "context",
+                        "elements": [
+                            {
+                                "type": "mrkdwn",
+                                "text": "Psssst this home tab was designed using <https://api.slack.com/tools/block-kit-builder|*Block Kit Builder*>",
+                            }
+                        ],
+                    },
+                ],
+            },
+        )
+        logger.info(result)
+
+    except SlackApiError as e:
+        logger.error(f"Error fetching conversations: {e}")
 
 
 @app.command('/bonus')
