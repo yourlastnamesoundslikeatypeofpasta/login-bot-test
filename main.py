@@ -57,6 +57,27 @@ def app_home_opened(event, client, logger):
                             }
                         ],
                     },
+                    {
+                        "type": "actions",
+                        "elements": [
+                            {
+                                "type": "button",
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "Productivity Score Calculator"
+                                },
+                                "action_id": "score_button"
+                            },
+                            {
+                                "type": "button",
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "Piece Pay Calculator"
+                                },
+                                "action_id": "pay_button"
+                            }
+                        ]
+                    }
                 ],
             },
         )
