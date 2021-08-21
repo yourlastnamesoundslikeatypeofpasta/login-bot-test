@@ -27,9 +27,33 @@ def get_production_score(pkgs, weight, items, hours):
     score = ((pkg_points * pkgs) + (item_points * items) + (lbs_points * weight)) / hours
     return score
 
+
 # Listen to the app_home_opened Events API event to hear when a user opens your app from the sidebarAd
 @app.event("app_home_opened")
 def app_home_opened(event, logger):
+    def error_view(body):
+        app.client.views_open(
+            # Pass the view_id
+            view_id=body["view"]["id"],
+            # String that represents view state to protect against race conditions
+            hash=body["view"]["hash"],
+            trigger_id=body['trigger_id'],
+            # View payload with updated blocks
+            view={
+                "type": "modal",
+                # View identifier
+                "callback_id": "error_msg_modal",
+                "title": {"type": "plain_text", "text": ":octagonal_sign: Error"},
+                "blocks": [
+                    {
+                        "type": "section",
+                        "text": {"type": "mrkdwn",
+                                 "text": f"`Error: Stats not entered correctly. Try using numbers only.`"}
+                    }
+                ]
+            }
+        )
+
     @app.action('score_home_button')
     def score_home_button_click(ack, body):
         ack()
@@ -127,16 +151,16 @@ def app_home_opened(event, logger):
     @app.view("calc_score_modal")
     def get_stats_update_calc_score_modal(ack, body, view):
         ack()
-        package_count = float(view['state']['values']['block_package']['sl_input']['value'])
-        weight_count = float(view['state']['values']['block_weight']['sl_input']['value'])
-        item_count = float(view['state']['values']['block_items']['sl_input']['value'])
-        hour_count = float(view['state']['values']['block_hours']['sl_input']['value'])
-        pkg_per_hour = package_count / hour_count
-        weight_per_package = weight_count / package_count
-        items_per_pkg = item_count / package_count
-        production_score = get_production_score(package_count, weight_count, item_count, hour_count)
-
         try:
+            package_count = float(view['state']['values']['block_package']['sl_input']['value'].strip(' '))
+            weight_count = float(view['state']['values']['block_weight']['sl_input']['value'].strip(' '))
+            item_count = float(view['state']['values']['block_items']['sl_input']['value'].strip(' '))
+            hour_count = float(view['state']['values']['block_hours']['sl_input']['value'].strip(' '))
+            pkg_per_hour = package_count / hour_count
+            weight_per_package = weight_count / package_count
+            items_per_pkg = item_count / package_count
+            production_score = get_production_score(package_count, weight_count, item_count, hour_count)
+
             app.client.views_open(
                 # Pass the view_id
                 view_id=body["view"]["id"],
@@ -152,13 +176,15 @@ def app_home_opened(event, logger):
                     "blocks": [
                         {
                             "type": "section",
-                            "text": {"type": "mrkdwn", "text": f"- Packages :package:: `{package_count}`\n- Lbs :weight_lifter:: `{weight_count}`\n- Items :shopping_trolley:: `{item_count}`\n- Hours :clock1:: `{hour_count}`\n\n- Pkg/Hour: `{pkg_per_hour}`\n- Lbs/Pkg: `{weight_per_package}`\n- Items/Pkg: `{items_per_pkg}`\n\n- Estimated Productivity Score: `{production_score:.2f}`"}
+                            "text": {"type": "mrkdwn",
+                                     "text": f"- Packages :package:: `{package_count}`\n- Lbs :weight_lifter:: `{weight_count}`\n- Items :shopping_trolley:: `{item_count}`\n- Hours :clock1:: `{hour_count}`\n\n- Pkg/Hour: `{pkg_per_hour}`\n- Lbs/Pkg: `{weight_per_package}`\n- Items/Pkg: `{items_per_pkg}`\n\n- Estimated Productivity Score: `{production_score:.2f}`"}
                         }
                     ]
                 }
             )
-        except SlackApiError as e:
-            print(e.response)
+        except (SlackApiError, ValueError) as e:
+            logger.info(e)
+            error_view(body)
 
     @app.action("piece_pay_home_button")
     def piecepay_home_button_click(ack, body, logger):
