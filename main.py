@@ -137,7 +137,7 @@ def app_home_opened(event, logger):
                                 "type": "plain_text",
                                 "text": "Hours"
                             }
-                        }
+                        },
                     ],
                     "type": "modal"
                 }
@@ -171,13 +171,53 @@ def app_home_opened(event, logger):
                 view={
                     "type": "modal",
                     # View identifier
-                    "callback_id": "calc_score_modal",
+                    "callback_id": "calc_score_modal_update",
                     "title": {"type": "plain_text", "text": "Productivity Score"},
                     "blocks": [
                         {
                             "type": "section",
-                            "text": {"type": "mrkdwn",
-                                     "text": f"- Packages :package:: `{package_count}`\n- Lbs :weight_lifter:: `{weight_count}`\n- Items :shopping_trolley:: `{item_count}`\n- Hours :clock1:: `{hour_count}`\n\n- Pkg/Hour: `{pkg_per_hour}`\n- Lbs/Pkg: `{weight_per_package}`\n- Items/Pkg: `{items_per_pkg}`\n\n- Estimated Productivity Score: `{production_score:.2f}`"}
+                            "fields": [
+                                {
+                                    "type": "mrkdwn",
+                                    "text": f"*Packages* :package::\n`{package_count}`"
+                                },
+                                {
+                                    "type": "mrkdwn",
+                                    "text": f"*Weight* :weight_lifter::\n`{weight_count}`"
+                                },
+                                {
+                                    "type": "mrkdwn",
+                                    "text": f"*Items* :shopping_trolley::\n`{item_count}`"
+                                },
+                                {
+                                    "type": "mrkdwn",
+                                    "text": f"*Hours* :clock1::\n`{hour_count}`"
+                                },
+                            ],
+                        },
+                        {
+                            "type": "divider"
+                        },
+                        {
+                            "type": "section",
+                            "fields": [
+                                {
+                                    "type": "mrkdwn",
+                                    "text": f"*Packages/Hour*:\n`{pkg_per_hour}`"
+                                },
+                                {
+                                    "type": "mrkdwn",
+                                    "text": f"*Weight/Package*:\n`{weight_per_package}`"
+                                },
+                                {
+                                    "type": "mrkdwn",
+                                    "text": f"*Items/Package*:\n`{items_per_pkg}`"
+                                },
+                                {
+                                    "type": "mrkdwn",
+                                    "text": f"*Productivity Score:*\n`{production_score:.2f} :dash:`"
+                                },
+                            ]
                         }
                     ]
                 }
@@ -271,7 +311,7 @@ def app_home_opened(event, logger):
                                             "text": "Tier 1 & 2",
                                             "emoji": True
                                         },
-                                        "value": "value-0"
+                                        "value": "tier_1_2"
                                     },
                                     {
                                         "text": {
@@ -279,15 +319,15 @@ def app_home_opened(event, logger):
                                             "text": "Tier 3 & 4",
                                             "emoji": True
                                         },
-                                        "value": "value-1"
+                                        "value": "tier_3_4"
                                     },
                                     {
                                         "text": {
                                             "type": "plain_text",
-                                            "text": "Super Saiyan Blue (Tier 5) :triumph:",
+                                            "text": "Super Saiyan Blue (Tier 5)",
                                             "emoji": True
                                         },
-                                        "value": "value-2"
+                                        "value": "tier_5"
                                     },
                                     {
                                         "text": {
@@ -295,7 +335,7 @@ def app_home_opened(event, logger):
                                             "text": "Personal Shopper",
                                             "emoji": True
                                         },
-                                        "value": "value-3"
+                                        "value": "personal_shopper"
                                     },
                                     {
                                         "text": {
@@ -303,7 +343,7 @@ def app_home_opened(event, logger):
                                             "text": "Special Handling",
                                             "emoji": True
                                         },
-                                        "value": "value-4"
+                                        "value": "special_handling"
                                     },
                                     {
                                         "text": {
@@ -311,7 +351,7 @@ def app_home_opened(event, logger):
                                             "text": "Heavies",
                                             "emoji": True
                                         },
-                                        "value": "value-5"
+                                        "value": "heavies"
                                     }
                                 ],
                                 "action_id": "static_select-action"
@@ -321,7 +361,16 @@ def app_home_opened(event, logger):
                                 "text": "Tier",
                                 "emoji": True
                             }
-                        }
+                        },
+                        {
+                            "type": "context",
+                            "elements": [
+                                {
+                                    "type": "mrkdwn",
+                                    "text": "Something something explaining tiers == tenure or spec login dept",
+                                }
+                            ],
+                        },
                     ]
                 }
             )
@@ -330,13 +379,67 @@ def app_home_opened(event, logger):
 
     @app.view("calc_piecepay_modal")
     def get_stats_update_calc_piecepay_modal(ack, view, body):
+        def get_payout(package_count, weight_count, item_count, tier):
+            tier_value_dict = {
+                "tier_1_2": {
+                    "packages": 0.23,
+                    "items": 0.07,
+                    "weight": 0
+                },
+                "tier_3_4": {
+                    "packages": 0.23,
+                    "items": 0.08,
+                    "weight": 0
+                },
+                "tier_5": {
+                    "packages": 0.26,
+                    "items": 0.08,
+                    "weight": 0
+                },
+                "personal_shopper": {
+                    "packages": 0.25,
+                    "items": 0.02,
+                    "weight": 0
+                },
+                "special_handling": {
+                    "packages": 0.08,
+                    "items": 0.15,
+                    "weight": 0
+                },
+                "heavies": {
+                    "packages": 0.25,
+                    "items": 0.08,
+                    "weight": 0.023
+                }
+            }
+
+            package_value = tier_value_dict[tier]['packages']
+            weight_value = tier_value_dict[tier]['weight']
+            item_value = tier_value_dict[tier]['items']
+
+            payout_value = (package_value * package_count) + (weight_value * weight_count) + (item_value * item_count)
+            return payout_value
         ack()
-        package_count = view['state']['values']['block_package']['sl_input']['value']
-        weight_count = view['state']['values']['block_weight']['sl_input']['value']
-        item_count = view['state']['values']['block_items']['sl_input']['value']
-        tier = view['state']['values']['block_tier']['static_select-action']['selected_option']['value']
 
         try:
+            package_count = float(view['state']['values']['block_package']['sl_input']['value'].strip(' '))
+            weight_count = float(view['state']['values']['block_weight']['sl_input']['value'].strip(' '))
+            item_count = float(view['state']['values']['block_items']['sl_input']['value'].strip(' '))
+            tier = view['state']['values']['block_tier']['static_select-action']['selected_option']['text']['text']
+            tier_value = view['state']['values']['block_tier']['static_select-action']['selected_option']['value']
+
+            # pick age emoji :)
+            if tier_value == 'tier_1_2':
+                tier_emoji = ':baby:'
+            elif tier_value == 'tier_3_4':
+                tier_emoji = ':child:'
+            elif tier_value == 'tier_5':
+                tier_emoji = ':older_man:'
+            else:
+                tier_emoji = ''
+
+            payout = get_payout(package_count, weight_count, item_count, tier_value)
+            #payout = '20'
             app.client.views_open(
                 # Pass the view_id
                 view_id=body["view"]["id"],
@@ -347,24 +450,45 @@ def app_home_opened(event, logger):
                 view={
                     "type": "modal",
                     # View identifier
-                    "callback_id": "calc_score_modal",
-                    "title": {"type": "plain_text", "text": "Updated modal"},
+                    "callback_id": "piecepay_calc_modal_update",
+                    "title": {"type": "plain_text", "text": "Piece Pay Report"},
                     "blocks": [
                         {
                             "type": "section",
-                            "text": {"type": "plain_text", "text": "You updated the modal!"}
+                            "fields": [
+                                {
+                                    "type": "mrkdwn",
+                                    "text": f"*Packages* :package::\n`{package_count}`"
+                                },
+                                {
+                                    "type": "mrkdwn",
+                                    "text": f"*Weight* :weight_lifter::\n`{weight_count}`"
+                                },
+                                {
+                                    "type": "mrkdwn",
+                                    "text": f"*Items* :shopping_trolley::\n`{item_count}`"
+                                },
+                                {
+                                    "type": "mrkdwn",
+                                    "text": f"*Tier* {tier_emoji}:\n`{tier}`"
+                                },
+                            ],
                         },
                         {
-                            "type": "image",
-                            "image_url": "https://media.giphy.com/media/SVZGEcYt7brkFUyU90/giphy.gif",
-                            "alt_text": "Yay! The modal was updated"
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": f"*Payout:moneybag::* `{payout}` "
+                            }
                         }
+
                     ]
                 }
             )
 
-        except SlackApiError as e:
+        except (SlackApiError, ValueError) as e:
             logger.info(e)
+            error_view(body)
 
     # app home view
     user = event["user"]
