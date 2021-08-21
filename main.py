@@ -118,19 +118,12 @@ def app_home_opened(event, logger):
             logger.info(f'Error creating view: {e}')
 
     @app.view("calc_score_modal")
-    def get_stats_update_modal(ack, body, view):
-        errors = {}
+    def get_stats_update_calc_score_modal(ack, body, view):
         ack()
-        print(view)
         package_count = view['state']['values']['block_package']['sl_input']['value']
         weight_count = view['state']['values']['block_weight']['sl_input']['value']
         item_count = view['state']['values']['block_items']['sl_input']['value']
         hour_count = view['state']['values']['block_hours']['sl_input']['value']
-        print(package_count, weight_count, item_count, hour_count)
-
-        view_id = body['view']['id']
-        view_hash = body['view']['hash']
-        trigger_id = body['trigger_id']
 
         try:
             app.client.views_open(
@@ -138,7 +131,7 @@ def app_home_opened(event, logger):
                 view_id=body["view"]["id"],
                 # String that represents view state to protect against race conditions
                 hash=body["view"]["hash"],
-                trigger_id=trigger_id,
+                trigger_id=body['trigger_id'],
                 # View payload with updated blocks
                 view={
                     "type": "modal",
@@ -161,6 +154,185 @@ def app_home_opened(event, logger):
         except SlackApiError as e:
             print(e.response)
 
+    @app.action("piece_pay_home_button")
+    def piecepay_home_button_click(ack, body, logger):
+        ack()
+        trigger_id = body['trigger_id']
+        # TODO: Add blocks to seperate dir, and files
+        try:
+            piecepay_view_result = app.client.views_open(
+                trigger_id=trigger_id,
+                view={
+                    "type": "modal",
+                    "callback_id": "calc_piecepay_modal",
+                    "title": {
+                        "type": "plain_text",
+                        "text": "Piece Pay Calculator"
+                    },
+                    "submit": {
+                        "type": "plain_text",
+                        "text": "Calculate"
+                    },
+                    "blocks": [
+                        {
+                            "type": "input",
+                            "block_id": "block_package",
+                            "element": {
+                                "type": "plain_text_input",
+                                "action_id": "sl_input",
+                                "placeholder": {
+                                    "type": "plain_text",
+                                    "text": "300"
+                                }
+                            },
+                            "label": {
+                                "type": "plain_text",
+                                "text": "Packages"
+                            }
+                        },
+                        {
+                            "type": "input",
+                            "block_id": "block_weight",
+                            "element": {
+                                "type": "plain_text_input",
+                                "action_id": "sl_input",
+                                "placeholder": {
+                                    "type": "plain_text",
+                                    "text": "750"
+                                }
+                            },
+                            "label": {
+                                "type": "plain_text",
+                                "text": "Weight"
+                            }
+                        },
+                        {
+                            "type": "input",
+                            "block_id": "block_items",
+                            "element": {
+                                "type": "plain_text_input",
+                                "action_id": "sl_input",
+                                "placeholder": {
+                                    "type": "plain_text",
+                                    "text": "450"
+                                }
+                            },
+                            "label": {
+                                "type": "plain_text",
+                                "text": "Items"
+                            }
+                        },
+                        {
+                            "type": "input",
+                            "block_id": "block_tier",
+                            "element": {
+                                "type": "static_select",
+                                "placeholder": {
+                                    "type": "plain_text",
+                                    "text": "Select a tier",
+                                    "emoji": True
+                                },
+                                "options": [
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "Tier 1 & 2",
+                                            "emoji": True
+                                        },
+                                        "value": "value-0"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "Tier 3 & 4",
+                                            "emoji": True
+                                        },
+                                        "value": "value-1"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "Super Saiyan Blue (Tier 5) :triumph:",
+                                            "emoji": True
+                                        },
+                                        "value": "value-2"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "Personal Shopper",
+                                            "emoji": True
+                                        },
+                                        "value": "value-3"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "Special Handling",
+                                            "emoji": True
+                                        },
+                                        "value": "value-4"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "Heavies",
+                                            "emoji": True
+                                        },
+                                        "value": "value-5"
+                                    }
+                                ],
+                                "action_id": "static_select-action"
+                            },
+                            "label": {
+                                "type": "plain_text",
+                                "text": "Tier",
+                                "emoji": True
+                            }
+                        }
+                    ]
+                }
+            )
+        except SlackApiError as e:
+            logger.info(f'Error creating view: {e}')
+
+    @app.view("calc_piecepay_modal")
+    def get_stats_update_calc_piecepay_modal(ack, view, body):
+        ack()
+        package_count = view['state']['values']['block_package']['sl_input']['value']
+        weight_count = view['state']['values']['block_weight']['sl_input']['value']
+        item_count = view['state']['values']['block_items']['sl_input']['value']
+        tier = view['state']['values']['block_tier']['static_select-action']['selected_option']['value']
+
+        try:
+            app.client.views_open(
+                # Pass the view_id
+                view_id=body["view"]["id"],
+                # String that represents view state to protect against race conditions
+                hash=body["view"]["hash"],
+                trigger_id=body['trigger_id'],
+                # View payload with updated blocks
+                view={
+                    "type": "modal",
+                    # View identifier
+                    "callback_id": "calc_score_modal",
+                    "title": {"type": "plain_text", "text": "Updated modal"},
+                    "blocks": [
+                        {
+                            "type": "section",
+                            "text": {"type": "plain_text", "text": "You updated the modal!"}
+                        },
+                        {
+                            "type": "image",
+                            "image_url": "https://media.giphy.com/media/SVZGEcYt7brkFUyU90/giphy.gif",
+                            "alt_text": "Yay! The modal was updated"
+                        }
+                    ]
+                }
+            )
+
+        except SlackApiError as e:
+            logger.info(e)
     user = event["user"]
     try:
         # app home view
@@ -222,8 +394,6 @@ def app_home_opened(event, logger):
         logger.info(result)
         home_view_id = result['view']['id']
         home_view_hash = result['view']['hash']
-        print(home_view_id)
-        print(home_view_hash)
     except SlackApiError as e:
         logger.error(f"Error fetching conversations: {e}")
 
