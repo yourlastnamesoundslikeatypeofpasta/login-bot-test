@@ -333,6 +333,8 @@ def app_home_opened(event, logger):
 
         except SlackApiError as e:
             logger.info(e)
+
+    # app home view
     user = event["user"]
     try:
         # app home view
@@ -367,6 +369,15 @@ def app_home_opened(event, logger):
                             }
                         ],
                     },
+                    {"type": "divider"},
+                    {
+                        "type": "header",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Calculators",
+                            "emoji": True
+                        }
+                    },
                     {
                         "type": "actions",
                         "elements": [
@@ -387,9 +398,12 @@ def app_home_opened(event, logger):
                                 "action_id": "piece_pay_home_button"
                             }
                         ]
+                    },
+                    {
+                        "type": "divider"
                     }
                 ],
-            },
+            }
         )
         logger.info(result)
         home_view_id = result['view']['id']
@@ -398,6 +412,7 @@ def app_home_opened(event, logger):
         logger.error(f"Error fetching conversations: {e}")
 
 
+# slack commands
 @app.command('/bonus')
 def bonus(ack, respond, command):
     """
