@@ -20,6 +20,13 @@ def get_error_msg_str(command_name):
     return f'`Error: Stats not entered correctly. Enter: "/{command_name} help" for help`'
 
 
+def get_production_score(pkgs, weight, items, hours):
+    pkg_points = 14.7
+    item_points = 2.03
+    lbs_points = 0.99
+    score = ((pkg_points * pkgs) + (item_points * items) + (lbs_points * weight)) / hours
+    return score
+
 # Listen to the app_home_opened Events API event to hear when a user opens your app from the sidebarAd
 @app.event("app_home_opened")
 def app_home_opened(event, logger):
@@ -36,7 +43,7 @@ def app_home_opened(event, logger):
                     "callback_id": "calc_score_modal",
                     "title": {
                         "type": "plain_text",
-                        "text": "Enter Production Stats"
+                        "text": "Production Calculator"
                     },
                     "submit": {
                         "type": "plain_text",
@@ -120,10 +127,14 @@ def app_home_opened(event, logger):
     @app.view("calc_score_modal")
     def get_stats_update_calc_score_modal(ack, body, view):
         ack()
-        package_count = view['state']['values']['block_package']['sl_input']['value']
-        weight_count = view['state']['values']['block_weight']['sl_input']['value']
-        item_count = view['state']['values']['block_items']['sl_input']['value']
-        hour_count = view['state']['values']['block_hours']['sl_input']['value']
+        package_count = float(view['state']['values']['block_package']['sl_input']['value'])
+        weight_count = float(view['state']['values']['block_weight']['sl_input']['value'])
+        item_count = float(view['state']['values']['block_items']['sl_input']['value'])
+        hour_count = float(view['state']['values']['block_hours']['sl_input']['value'])
+        pkg_per_hour = package_count / hour_count
+        weight_per_package = weight_count / package_count
+        items_per_pkg = item_count / package_count
+        production_score = get_production_score(package_count, weight_count, item_count, hour_count)
 
         try:
             app.client.views_open(
@@ -137,16 +148,11 @@ def app_home_opened(event, logger):
                     "type": "modal",
                     # View identifier
                     "callback_id": "calc_score_modal",
-                    "title": {"type": "plain_text", "text": "Updated modal"},
+                    "title": {"type": "plain_text", "text": "Productivity Score"},
                     "blocks": [
                         {
                             "type": "section",
-                            "text": {"type": "plain_text", "text": "You updated the modal!"}
-                        },
-                        {
-                            "type": "image",
-                            "image_url": "https://media.giphy.com/media/SVZGEcYt7brkFUyU90/giphy.gif",
-                            "alt_text": "Yay! The modal was updated"
+                            "text": {"type": "mrkdwn", "text": f"- Packages :package:: `{package_count}`\n- Lbs :weight_lifter:: `{weight_count}`\n- Items :shopping_trolley:: `{item_count}`\n- Hours :clock1:: `{hour_count}`\n\n- Pkg/Hour: `{pkg_per_hour}`\n- Lbs/Pkg: `{weight_per_package}`\n- Items/Pkg: `{items_per_pkg}`\n\n- Estimated Productivity Score: `{production_score:.2f}`"}
                         }
                     ]
                 }
