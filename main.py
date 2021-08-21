@@ -215,7 +215,7 @@ def app_home_opened(event, logger):
                                 },
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"*Productivity Score:*\n`{production_score:.2f} :dash:`"
+                                    "text": f"*Productivity Score:*\n`{production_score:.2f}` :dash:"
                                 },
                             ]
                         }
