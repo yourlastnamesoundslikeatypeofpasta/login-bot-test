@@ -191,19 +191,19 @@ def app_home_opened(event, logger):
                             "fields": [
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"*Packages* :package::\n`{package_count}`"
+                                    "text": f"*Packages* :package::\n`{package_count:.2f}`"
                                 },
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"*Weight* :weight_lifter::\n`{weight_count}`"
+                                    "text": f"*Weight* :weight_lifter::\n`{weight_count:.2f}`"
                                 },
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"*Items* :shopping_trolley::\n`{item_count}`"
+                                    "text": f"*Items* :shopping_trolley::\n`{item_count:.2f}`"
                                 },
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"*Hours* :clock1::\n`{hour_count}`"
+                                    "text": f"*Hours* :clock1::\n`{hour_count:.2f}`"
                                 },
                             ],
                         },
@@ -215,15 +215,15 @@ def app_home_opened(event, logger):
                             "fields": [
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"*Packages/Hour*:\n`{pkg_per_hour}`"
+                                    "text": f"*Packages/Hour*:\n`{pkg_per_hour:.2f}`"
                                 },
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"*Weight/Package*:\n`{weight_per_package}`"
+                                    "text": f"*Weight/Package*:\n`{weight_per_package:.2f}`"
                                 },
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"*Items/Package*:\n`{items_per_pkg}`"
+                                    "text": f"*Items/Package*:\n`{items_per_pkg:.2f}`"
                                 },
                                 {
                                     "type": "mrkdwn",
@@ -477,15 +477,15 @@ def app_home_opened(event, logger):
                             "fields": [
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"*Packages* :package::\n`{package_count}`"
+                                    "text": f"*Packages* :package::\n`{package_count:.2f}`"
                                 },
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"*Weight* :weight_lifter::\n`{weight_count}`"
+                                    "text": f"*Weight* :weight_lifter::\n`{weight_count:.2f}`"
                                 },
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"*Items* :shopping_trolley::\n`{item_count}`"
+                                    "text": f"*Items* :shopping_trolley::\n`{item_count:.2f}`"
                                 },
                                 {
                                     "type": "mrkdwn",
@@ -497,7 +497,7 @@ def app_home_opened(event, logger):
                             "type": "section",
                             "text": {
                                 "type": "mrkdwn",
-                                "text": f"*Payout:moneybag::* `{payout}` "
+                                "text": f"*Payout:moneybag::* `{payout:.2f}` "
                             }
                         }
 
