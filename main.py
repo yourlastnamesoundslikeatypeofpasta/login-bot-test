@@ -1073,7 +1073,7 @@ def app_home_opened(event, logger):
                         "elements": [
                             {
                                 "type": "mrkdwn",
-                                "text": "Psssst this home tab was designed using <https://api.slack.com/tools/block-kit-builder|*Block Kit Builder*>",
+                                "text": "Link to login-bot-test code: Github <https://github.com/yourlastnamesoundslikeatypeofpasta/login-bot-test|link>",
                             }
                         ],
                     },
