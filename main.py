@@ -108,7 +108,7 @@ def app_home_opened(event, logger):
                             "block_id": "block_package",
                             "element": {
                                 "type": "plain_text_input",
-                                "action_id": "sl_input",
+                                "action_id": "package_input",
                                 "placeholder": {
                                     "type": "plain_text",
                                     "text": "300"
@@ -124,7 +124,7 @@ def app_home_opened(event, logger):
                             "block_id": "block_weight",
                             "element": {
                                 "type": "plain_text_input",
-                                "action_id": "sl_input",
+                                "action_id": "weight_input",
                                 "placeholder": {
                                     "type": "plain_text",
                                     "text": "750"
@@ -140,7 +140,7 @@ def app_home_opened(event, logger):
                             "block_id": "block_items",
                             "element": {
                                 "type": "plain_text_input",
-                                "action_id": "sl_input",
+                                "action_id": "item_input",
                                 "placeholder": {
                                     "type": "plain_text",
                                     "text": "450"
@@ -156,7 +156,7 @@ def app_home_opened(event, logger):
                             "block_id": "block_hours",
                             "element": {
                                 "type": "plain_text_input",
-                                "action_id": "sl_input",
+                                "action_id": "hour_input",
                                 "placeholder": {
                                     "type": "plain_text",
                                     "text": "7.5"
