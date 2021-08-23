@@ -439,18 +439,20 @@ def app_home_opened(event, logger):
             "block_items": view['state']['values']['block_items']['item_input']['value'].strip(' '),
         }
         error_response_action = validate_input(block_input_values)
-        print(error_response_action)
         if error_response_action:
             ack(error_response_action)
             return
 
         try:
+            package_count = float(block_input_values['block_package'])
+            weight_count = float(block_input_values['block_weight'])
+            item_count = float(block_input_values['block_items'])
             tier = view['state']['values']['block_tier']['static_select-action']['selected_option']['text']['text']
             tier_value = view['state']['values']['block_tier']['static_select-action']['selected_option']['value']
-            payout = get_payout(block_input_values['package_count'],
-                                block_input_values['weight_count'],
-                                block_input_values['item_count'],
-                                block_input_values['tier_value'])
+            payout = get_payout(package_count,
+                                weight_count,
+                                item_count,
+                                tier_value)
 
             # pick age emoji :)
             if tier_value == 'tier_1':
@@ -475,15 +477,15 @@ def app_home_opened(event, logger):
                             "fields": [
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"*Packages* :package::\n`{block_input_values['package_count']}`"
+                                    "text": f"*Packages* :package::\n`{package_count}`"
                                 },
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"*Weight* :weight_lifter::\n`{block_input_values['weight_count']}`"
+                                    "text": f"*Weight* :weight_lifter::\n`{weight_count}`"
                                 },
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"*Items* :shopping_trolley::\n`{block_input_values['item_count']}`"
+                                    "text": f"*Items* :shopping_trolley::\n`{item_count}`"
                                 },
                                 {
                                     "type": "mrkdwn",
