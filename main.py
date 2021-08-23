@@ -143,7 +143,7 @@ def app_home_opened(event, logger):
                                 "type": "plain_text",
                                 "text": "Hours"
                             }
-                        },
+                        }
                     ],
                     "type": "modal"
                 }
@@ -182,10 +182,80 @@ def app_home_opened(event, logger):
                 "response_action": "update",
                 "view": {
                     "type": "modal",
-                    # View identifier
-                    "callback_id": "calc_score_modal_update",
-                    "title": {"type": "plain_text", "text": "Productivity Score"},
+                    "callback_id": "calc_score_modal",
+                    "title": {
+                        "type": "plain_text",
+                        "text": "Production Calculator"
+                    },
+                    "submit": {
+                        "type": "plain_text",
+                        "text": "Calculate"
+                    },
                     "blocks": [
+                        {
+                            "type": "input",
+                            "block_id": "block_package",
+                            "element": {
+                                "type": "plain_text_input",
+                                "action_id": "package_input",
+                                "placeholder": {
+                                    "type": "plain_text",
+                                    "text": "300"
+                                }
+                            },
+                            "label": {
+                                "type": "plain_text",
+                                "text": "Packages"
+                            }
+                        },
+                        {
+                            "type": "input",
+                            "block_id": "block_weight",
+                            "element": {
+                                "type": "plain_text_input",
+                                "action_id": "weight_input",
+                                "placeholder": {
+                                    "type": "plain_text",
+                                    "text": "750"
+                                }
+                            },
+                            "label": {
+                                "type": "plain_text",
+                                "text": "Weight"
+                            }
+                        },
+                        {
+                            "type": "input",
+                            "block_id": "block_items",
+                            "element": {
+                                "type": "plain_text_input",
+                                "action_id": "item_input",
+                                "placeholder": {
+                                    "type": "plain_text",
+                                    "text": "450"
+                                }
+                            },
+                            "label": {
+                                "type": "plain_text",
+                                "text": "Items"
+                            }
+                        },
+                        {
+                            "type": "input",
+                            "block_id": "block_hours",
+                            "element": {
+                                "type": "plain_text_input",
+                                "action_id": "hour_input",
+                                "placeholder": {
+                                    "type": "plain_text",
+                                    "text": "7.5"
+                                }
+                            },
+                            "label": {
+                                "type": "plain_text",
+                                "text": "Hours"
+                            }
+                        },
                         {
                             "type": "section",
                             "fields": [
@@ -231,7 +301,8 @@ def app_home_opened(event, logger):
                                 },
                             ]
                         }
-                    ]
+                    ],
+                    "type": "modal"
                 }
             })
         except (SlackApiError, ValueError) as e:
@@ -383,7 +454,8 @@ def app_home_opened(event, logger):
                                 }
                             ],
                         },
-                    ]
+                    ],
+                    "type": "modal"
                 }
             )
         except SlackApiError as e:
@@ -468,10 +540,141 @@ def app_home_opened(event, logger):
                 "response_action": "update",
                 "view": {
                     "type": "modal",
-                    # View identifier
-                    "callback_id": "piecepay_calc_modal_update",
-                    "title": {"type": "plain_text", "text": "Piece Pay Report"},
+                    "callback_id": "calc_piecepay_modal",
+                    "title": {
+                        "type": "plain_text",
+                        "text": "Piece Pay Calculator"
+                    },
+                    "submit": {
+                        "type": "plain_text",
+                        "text": "Calculate"
+                    },
                     "blocks": [
+                        {
+                            "type": "input",
+                            "block_id": "block_package",
+                            "element": {
+                                "type": "plain_text_input",
+                                "action_id": "package_input",
+                                "placeholder": {
+                                    "type": "plain_text",
+                                    "text": "300"
+                                }
+                            },
+                            "label": {
+                                "type": "plain_text",
+                                "text": "Packages"
+                            }
+                        },
+                        {
+                            "type": "input",
+                            "block_id": "block_weight",
+                            "element": {
+                                "type": "plain_text_input",
+                                "action_id": "weight_input",
+                                "placeholder": {
+                                    "type": "plain_text",
+                                    "text": "750"
+                                }
+                            },
+                            "label": {
+                                "type": "plain_text",
+                                "text": "Weight"
+                            }
+                        },
+                        {
+                            "type": "input",
+                            "block_id": "block_items",
+                            "element": {
+                                "type": "plain_text_input",
+                                "action_id": "item_input",
+                                "placeholder": {
+                                    "type": "plain_text",
+                                    "text": "450"
+                                }
+                            },
+                            "label": {
+                                "type": "plain_text",
+                                "text": "Items"
+                            }
+                        },
+                        {
+                            "type": "input",
+                            "block_id": "block_tier",
+                            "element": {
+                                "type": "static_select",
+                                "placeholder": {
+                                    "type": "plain_text",
+                                    "text": "Select a tier",
+                                    "emoji": True
+                                },
+                                "options": [
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "Tier 1",
+                                            "emoji": True
+                                        },
+                                        "value": "tier_1"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "Tier 2",
+                                            "emoji": True
+                                        },
+                                        "value": "tier_2"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "Tier 3",
+                                            "emoji": True
+                                        },
+                                        "value": "tier_3"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "Personal Shopper",
+                                            "emoji": True
+                                        },
+                                        "value": "personal_shopper"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "Special Handling",
+                                            "emoji": True
+                                        },
+                                        "value": "special_handling"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "Heavies",
+                                            "emoji": True
+                                        },
+                                        "value": "heavies"
+                                    }
+                                ],
+                                "action_id": "static_select-action"
+                            },
+                            "label": {
+                                "type": "plain_text",
+                                "text": "Tier",
+                                "emoji": True
+                            }
+                        },
+                        {
+                            "type": "context",
+                            "elements": [
+                                {
+                                    "type": "mrkdwn",
+                                    "text": "Tier is based off of tenure",
+                                }
+                            ],
+                        },
                         {
                             "type": "section",
                             "fields": [
@@ -500,7 +703,6 @@ def app_home_opened(event, logger):
                                 "text": f"*Payout:moneybag::* `{payout:.2f}` "
                             }
                         }
-
                     ]
                 }
             })
