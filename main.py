@@ -261,19 +261,19 @@ def app_home_opened(event, logger):
                             "fields": [
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"*Packages* :package::\n`{package_count:.2f}`"
+                                    "text": f"*Packages* :package:: `{package_count:.2f}`"
                                 },
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"*Weight* :weight_lifter::\n`{weight_count:.2f}`"
+                                    "text": f"*Weight* :weight_lifter:: `{weight_count:.2f}`"
                                 },
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"*Items* :shopping_trolley::\n`{item_count:.2f}`"
+                                    "text": f"*Items* :shopping_trolley:: `{item_count:.2f}`"
                                 },
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"*Hours* :clock1::\n`{hour_count:.2f}`"
+                                    "text": f"*Hours* :clock1:: `{hour_count:.2f}`"
                                 },
                             ],
                         },
@@ -285,19 +285,19 @@ def app_home_opened(event, logger):
                             "fields": [
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"*Packages/Hour*:\n`{pkg_per_hour:.2f}`"
+                                    "text": f"*Packages/Hour*: `{pkg_per_hour:.2f}`"
                                 },
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"*Weight/Package*:\n`{weight_per_package:.2f}`"
+                                    "text": f"*Weight/Package*: `{weight_per_package:.2f}`"
                                 },
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"*Items/Package*:\n`{items_per_pkg:.2f}`"
+                                    "text": f"*Items/Package*: `{items_per_pkg:.2f}`"
                                 },
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"*Productivity Score:*\n`{production_score:.2f}` :dash:"
+                                    "text": f"*Productivity Score:* `{production_score:.2f}` :dash:"
                                 },
                             ]
                         }
@@ -680,19 +680,19 @@ def app_home_opened(event, logger):
                             "fields": [
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"*Packages* :package::\n`{package_count:.2f}`"
+                                    "text": f"*Packages* :package:: `{package_count:.2f}`"
                                 },
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"*Weight* :weight_lifter::\n`{weight_count:.2f}`"
+                                    "text": f"*Weight* :weight_lifter:: `{weight_count:.2f}`"
                                 },
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"*Items* :shopping_trolley::\n`{item_count:.2f}`"
+                                    "text": f"*Items* :shopping_trolley:: `{item_count:.2f}`"
                                 },
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"*Tier* {tier_emoji}:\n`{tier}`"
+                                    "text": f"*Tier* {tier_emoji}: `{tier}`"
                                 },
                             ],
                         },
