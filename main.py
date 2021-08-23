@@ -1,5 +1,5 @@
 import os
-import json
+import string
 
 from slack_bolt import App
 from slack_sdk.errors import SlackApiError
@@ -26,6 +26,35 @@ def get_production_score(pkgs, weight, items, hours):
     lbs_points = 0.99
     score = ((pkg_points * pkgs) + (item_points * items) + (lbs_points * weight)) / hours
     return score
+
+
+def validate_input(b_input_value_dict):
+    # check if input is only numbers
+    error_block_id_list = []
+    numbers = string.digits
+    error_str = 'This entry can only contain numbers'
+    for block_id, block_stat in b_input_value_dict.items():
+        for number in block_stat:
+            if number not in numbers and number != '.':  # let '.' through. Hours might include them
+                error_block_id_list.append((block_id, error_str))
+
+    # check if input starts with '0'
+    error_str = 'This entry cannot start with 0'
+    for block_id, block_stat in b_input_value_dict.items():
+        if block_stat.startswith('0'):
+            error_block_id_list.append((block_id, error_str))
+
+    # create action response
+    if error_block_id_list:
+        response_action_temp = {
+            "response_action": "errors",
+            "errors": {
+            }
+        }
+        for block, error in error_block_id_list:
+            response_action_temp['errors'][block] = error
+        print(response_action_temp)
+        return response_action_temp
 
 
 # Listen to the app_home_opened Events API event to hear when a user opens your app from the sidebarAd
@@ -151,11 +180,22 @@ def app_home_opened(event, logger):
     @app.view("calc_score_modal")
     def get_stats_update_calc_score_modal(ack, body, view):
         ack()
+
+        block_values = {
+            "block_package": view['state']['values']['block_package']['sl_input']['value'].strip(' '),
+            "block_weight": view['state']['values']['block_weight']['sl_input']['value'].strip(' '),
+            "block_items": view['state']['values']['block_items']['sl_input']['value'].strip(' '),
+            "block_hours": view['state']['values']['block_hours']['sl_input']['value'].strip(' ')
+        }
+        error_response_action = validate_input(block_values)
+        if error_response_action:
+            ack(error_response_action)
+            return
         try:
-            package_count = float(view['state']['values']['block_package']['sl_input']['value'].strip(' '))
-            weight_count = float(view['state']['values']['block_weight']['sl_input']['value'].strip(' '))
-            item_count = float(view['state']['values']['block_items']['sl_input']['value'].strip(' '))
-            hour_count = float(view['state']['values']['block_hours']['sl_input']['value'].strip(' '))
+            package_count = float(block_values['block_package'])
+            weight_count = float(block_values['block_weight'])
+            item_count = float(block_values['block_items'])
+            hour_count = float(block_values['block_hours'])
             pkg_per_hour = package_count / hour_count
             weight_per_package = weight_count / package_count
             items_per_pkg = item_count / package_count
@@ -223,8 +263,9 @@ def app_home_opened(event, logger):
                 }
             )
         except (SlackApiError, ValueError) as e:
+            print(e)
+            #ack(response_action)
             logger.info(e)
-            error_view(body)
 
     @app.action("piece_pay_home_button")
     def piecepay_home_button_click(ack, body, logger):
@@ -419,6 +460,7 @@ def app_home_opened(event, logger):
 
             payout_value = (package_value * package_count) + (weight_value * weight_count) + (item_value * item_count)
             return payout_value
+
         ack()
 
         try:
@@ -439,7 +481,7 @@ def app_home_opened(event, logger):
                 tier_emoji = ''
 
             payout = get_payout(package_count, weight_count, item_count, tier_value)
-            #payout = '20'
+            # payout = '20'
             app.client.views_open(
                 # Pass the view_id
                 view_id=body["view"]["id"],
