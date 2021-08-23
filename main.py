@@ -35,7 +35,7 @@ def validate_input(b_input_value_dict):
     error_str = 'This entry can only contain numbers'
     for block_id, block_stat in b_input_value_dict.items():
         for number in block_stat:
-            if number not in numbers and number != '.':  # let '.' through. Hours might include them
+            if number not in numbers and '.' != number:  # let '.' through. Hours might include them
                 error_block_id_list.append((block_id, error_str))
 
     # check if input starts with '0'
@@ -53,35 +53,12 @@ def validate_input(b_input_value_dict):
         }
         for block, error in error_block_id_list:
             response_action_temp['errors'][block] = error
-        print(response_action_temp)
         return response_action_temp
 
 
 # Listen to the app_home_opened Events API event to hear when a user opens your app from the sidebarAd
 @app.event("app_home_opened")
 def app_home_opened(event, logger):
-    def error_view(body):
-        app.client.views_open(
-            # Pass the view_id
-            view_id=body["view"]["id"],
-            # String that represents view state to protect against race conditions
-            hash=body["view"]["hash"],
-            trigger_id=body['trigger_id'],
-            # View payload with updated blocks
-            view={
-                "type": "modal",
-                # View identifier
-                "callback_id": "error_msg_modal",
-                "title": {"type": "plain_text", "text": ":octagonal_sign: Error"},
-                "blocks": [
-                    {
-                        "type": "section",
-                        "text": {"type": "mrkdwn",
-                                 "text": f"`Error: Stats not entered correctly. Try using numbers only.`"}
-                    }
-                ]
-            }
-        )
 
     @app.action('score_home_button')
     def score_home_button_click(ack, body):
@@ -182,10 +159,10 @@ def app_home_opened(event, logger):
         ack()
 
         block_values = {
-            "block_package": view['state']['values']['block_package']['sl_input']['value'].strip(' '),
-            "block_weight": view['state']['values']['block_weight']['sl_input']['value'].strip(' '),
-            "block_items": view['state']['values']['block_items']['sl_input']['value'].strip(' '),
-            "block_hours": view['state']['values']['block_hours']['sl_input']['value'].strip(' ')
+            "block_package": view['state']['values']['block_package']['package_input']['value'].strip(' '),
+            "block_weight": view['state']['values']['block_weight']['weight_input']['value'].strip(' '),
+            "block_items": view['state']['values']['block_items']['item_input']['value'].strip(' '),
+            "block_hours": view['state']['values']['block_hours']['hour_input']['value'].strip(' ')
         }
         error_response_action = validate_input(block_values)
         if error_response_action:
@@ -201,14 +178,9 @@ def app_home_opened(event, logger):
             items_per_pkg = item_count / package_count
             production_score = get_production_score(package_count, weight_count, item_count, hour_count)
 
-            app.client.views_open(
-                # Pass the view_id
-                view_id=body["view"]["id"],
-                # String that represents view state to protect against race conditions
-                hash=body["view"]["hash"],
-                trigger_id=body['trigger_id'],
-                # View payload with updated blocks
-                view={
+            ack({
+                "response_action": "update",
+                "view": {
                     "type": "modal",
                     # View identifier
                     "callback_id": "calc_score_modal_update",
@@ -261,10 +233,9 @@ def app_home_opened(event, logger):
                         }
                     ]
                 }
-            )
+            })
         except (SlackApiError, ValueError) as e:
             print(e)
-            #ack(response_action)
             logger.info(e)
 
     @app.action("piece_pay_home_button")
@@ -292,7 +263,7 @@ def app_home_opened(event, logger):
                             "block_id": "block_package",
                             "element": {
                                 "type": "plain_text_input",
-                                "action_id": "sl_input",
+                                "action_id": "package_input",
                                 "placeholder": {
                                     "type": "plain_text",
                                     "text": "300"
@@ -308,7 +279,7 @@ def app_home_opened(event, logger):
                             "block_id": "block_weight",
                             "element": {
                                 "type": "plain_text_input",
-                                "action_id": "sl_input",
+                                "action_id": "weight_input",
                                 "placeholder": {
                                     "type": "plain_text",
                                     "text": "750"
@@ -324,7 +295,7 @@ def app_home_opened(event, logger):
                             "block_id": "block_items",
                             "element": {
                                 "type": "plain_text_input",
-                                "action_id": "sl_input",
+                                "action_id": "item_input",
                                 "placeholder": {
                                     "type": "plain_text",
                                     "text": "450"
@@ -349,26 +320,26 @@ def app_home_opened(event, logger):
                                     {
                                         "text": {
                                             "type": "plain_text",
-                                            "text": "Tier 1 & 2",
+                                            "text": "Tier 1",
                                             "emoji": True
                                         },
-                                        "value": "tier_1_2"
+                                        "value": "tier_1"
                                     },
                                     {
                                         "text": {
                                             "type": "plain_text",
-                                            "text": "Tier 3 & 4",
+                                            "text": "Tier 2",
                                             "emoji": True
                                         },
-                                        "value": "tier_3_4"
+                                        "value": "tier_2"
                                     },
                                     {
                                         "text": {
                                             "type": "plain_text",
-                                            "text": "Super Saiyan Blue (Tier 5)",
+                                            "text": "Tier 3",
                                             "emoji": True
                                         },
-                                        "value": "tier_5"
+                                        "value": "tier_3"
                                     },
                                     {
                                         "text": {
@@ -408,7 +379,7 @@ def app_home_opened(event, logger):
                             "elements": [
                                 {
                                     "type": "mrkdwn",
-                                    "text": "Something something explaining tiers == tenure or spec login dept",
+                                    "text": "Tier is based off of tenure",
                                 }
                             ],
                         },
@@ -422,17 +393,17 @@ def app_home_opened(event, logger):
     def get_stats_update_calc_piecepay_modal(ack, view, body):
         def get_payout(package_count, weight_count, item_count, tier):
             tier_value_dict = {
-                "tier_1_2": {
+                "tier_1": {
                     "packages": 0.23,
                     "items": 0.07,
                     "weight": 0
                 },
-                "tier_3_4": {
+                "tier_2": {
                     "packages": 0.23,
                     "items": 0.08,
                     "weight": 0
                 },
-                "tier_5": {
+                "tier_3": {
                     "packages": 0.26,
                     "items": 0.08,
                     "weight": 0
@@ -460,36 +431,40 @@ def app_home_opened(event, logger):
 
             payout_value = (package_value * package_count) + (weight_value * weight_count) + (item_value * item_count)
             return payout_value
-
         ack()
 
+        block_input_values = {
+            "block_package": view['state']['values']['block_package']['package_input']['value'].strip(' '),
+            "block_weight": view['state']['values']['block_weight']['weight_input']['value'].strip(' '),
+            "block_items": view['state']['values']['block_items']['item_input']['value'].strip(' '),
+        }
+        error_response_action = validate_input(block_input_values)
+        print(error_response_action)
+        if error_response_action:
+            ack(error_response_action)
+            return
+
         try:
-            package_count = float(view['state']['values']['block_package']['sl_input']['value'].strip(' '))
-            weight_count = float(view['state']['values']['block_weight']['sl_input']['value'].strip(' '))
-            item_count = float(view['state']['values']['block_items']['sl_input']['value'].strip(' '))
             tier = view['state']['values']['block_tier']['static_select-action']['selected_option']['text']['text']
             tier_value = view['state']['values']['block_tier']['static_select-action']['selected_option']['value']
+            payout = get_payout(block_input_values['package_count'],
+                                block_input_values['weight_count'],
+                                block_input_values['item_count'],
+                                block_input_values['tier_value'])
 
             # pick age emoji :)
-            if tier_value == 'tier_1_2':
+            if tier_value == 'tier_1':
                 tier_emoji = ':baby:'
-            elif tier_value == 'tier_3_4':
+            elif tier_value == 'tier_2':
                 tier_emoji = ':child:'
-            elif tier_value == 'tier_5':
+            elif tier_value == 'tier_3':
                 tier_emoji = ':older_man:'
             else:
                 tier_emoji = ''
 
-            payout = get_payout(package_count, weight_count, item_count, tier_value)
-            # payout = '20'
-            app.client.views_open(
-                # Pass the view_id
-                view_id=body["view"]["id"],
-                # String that represents view state to protect against race conditions
-                hash=body["view"]["hash"],
-                trigger_id=body['trigger_id'],
-                # View payload with updated blocks
-                view={
+            ack({
+                "response_action": "update",
+                "view": {
                     "type": "modal",
                     # View identifier
                     "callback_id": "piecepay_calc_modal_update",
@@ -500,15 +475,15 @@ def app_home_opened(event, logger):
                             "fields": [
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"*Packages* :package::\n`{package_count}`"
+                                    "text": f"*Packages* :package::\n`{block_input_values['package_count']}`"
                                 },
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"*Weight* :weight_lifter::\n`{weight_count}`"
+                                    "text": f"*Weight* :weight_lifter::\n`{block_input_values['weight_count']}`"
                                 },
                                 {
                                     "type": "mrkdwn",
-                                    "text": f"*Items* :shopping_trolley::\n`{item_count}`"
+                                    "text": f"*Items* :shopping_trolley::\n`{block_input_values['item_count']}`"
                                 },
                                 {
                                     "type": "mrkdwn",
@@ -526,11 +501,11 @@ def app_home_opened(event, logger):
 
                     ]
                 }
-            )
+            })
 
         except (SlackApiError, ValueError) as e:
+            print(e)
             logger.info(e)
-            error_view(body)
 
     # app home view
     user = event["user"]
