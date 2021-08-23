@@ -446,13 +446,99 @@ def app_home_opened(event, logger):
                             }
                         },
                         {
-                            "type": "context",
-                            "elements": [
-                                {
-                                    "type": "mrkdwn",
-                                    "text": "Tier is based off of tenure",
-                                }
-                            ],
+                            "type": "section",
+                            "block_id": "block_mistakes",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": "Mistakes - *_optional_* (under development)"
+                            },
+                            "accessory": {
+                                "action_id": "mistake_selections",
+                                "type": "multi_static_select",
+                                "placeholder": {
+                                    "type": "plain_text",
+                                    "text": "Select mistakes"
+                                },
+                                "options": [
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "DE"
+                                        },
+                                        "value": "value-1"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "DE2"
+                                        },
+                                        "value": "value-2"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "QD"
+                                        },
+                                        "value": "value-3"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "PH2"
+                                        },
+                                        "value": "value-4"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "MI"
+                                        },
+                                        "value": "value-5"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "MI2"
+                                        },
+                                        "value": "value-6"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "WA"
+                                        },
+                                        "value": "value-6"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "CM"
+                                        },
+                                        "value": "value-7"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "DG MAJ"
+                                        },
+                                        "value": "value-8"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "UTL"
+                                        },
+                                        "value": "value-9"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "LABEL"
+                                        },
+                                        "value": "value-10"
+                                    }
+                                ]
+                            }
                         },
                     ],
                     "type": "modal"
@@ -667,13 +753,99 @@ def app_home_opened(event, logger):
                             }
                         },
                         {
-                            "type": "context",
-                            "elements": [
-                                {
-                                    "type": "mrkdwn",
-                                    "text": "Tier is based off of tenure",
-                                }
-                            ],
+                            "type": "section",
+                            "block_id": "block_mistakes",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": "Mistakes - *_optional_* (under development)"
+                            },
+                            "accessory": {
+                                "action_id": "mistake_selections",
+                                "type": "multi_static_select",
+                                "placeholder": {
+                                    "type": "plain_text",
+                                    "text": "Select mistakes"
+                                },
+                                "options": [
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "DE"
+                                        },
+                                        "value": "value-1"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "DE2"
+                                        },
+                                        "value": "value-2"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "QD"
+                                        },
+                                        "value": "value-3"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "PH2"
+                                        },
+                                        "value": "value-4"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "MI"
+                                        },
+                                        "value": "value-5"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "MI2"
+                                        },
+                                        "value": "value-6"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "WA"
+                                        },
+                                        "value": "value-6"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "CM"
+                                        },
+                                        "value": "value-7"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "DG MAJ"
+                                        },
+                                        "value": "value-8"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "UTL"
+                                        },
+                                        "value": "value-9"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "LABEL"
+                                        },
+                                        "value": "value-10"
+                                    }
+                                ]
+                            }
                         },
                         {
                             "type": "section",
@@ -702,8 +874,9 @@ def app_home_opened(event, logger):
                                 "type": "mrkdwn",
                                 "text": f"*Payout:moneybag::* `{payout:.2f}` "
                             }
-                        }
-                    ]
+                        },
+                    ],
+                    "type": "modal"
                 }
             })
 
