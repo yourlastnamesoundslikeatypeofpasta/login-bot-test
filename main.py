@@ -59,7 +59,6 @@ def validate_input(b_input_value_dict):
 # Listen to the app_home_opened Events API event to hear when a user opens your app from the sidebarAd
 @app.event("app_home_opened")
 def app_home_opened(event, logger):
-
     @app.action('score_home_button')
     def score_home_button_click(ack, body):
         ack()
@@ -589,6 +588,7 @@ def app_home_opened(event, logger):
 
             payout_value = (package_value * package_count) + (weight_value * weight_count) + (item_value * item_count)
             return payout_value
+
         ack()
 
         block_input_values = {
@@ -884,6 +884,164 @@ def app_home_opened(event, logger):
             print(e)
             logger.info(e)
 
+    @app.action("appeal_mistake_button_click")
+    def appeal_mistake_button_click(ack, body):
+        ack()
+        trigger_id = body['trigger_id']
+        try:
+            app.client.views_open(
+                trigger_id=trigger_id,
+                view={
+                    "type": "modal",
+                    "callback_id": "appeal_mistake_modal",
+                    "title": {
+                        "type": "plain_text",
+                        "text": "Mistake Appeal"
+                    },
+                    "submit": {
+                        "type": "plain_text",
+                        "text": "Submit"
+                    },
+                    "blocks": [
+                        {
+                            "type": "input",
+                            "element": {
+                                "type": "plain_text_input",
+                                "action_id": "plain_text_input-action",
+                                "placeholder": {
+                                    "type": "plain_text",
+                                    "text": "02-415-0338"
+                                }
+                            },
+                            "label": {
+                                "type": "plain_text",
+                                "text": "Package Id",
+                            }
+                        },
+                        {
+                            "type": "input",
+                            "element": {
+                                "type": "plain_text_input",
+                                "multiline": True,
+                                "action_id": "plain_text_input-action",
+                                "max_length": 250,
+                                "placeholder": {
+                                    "type": "plain_text",
+                                    "text": "Enter a brief description..."
+                                }
+                            },
+                            "label": {
+                                "type": "plain_text",
+                                "text": "Brief Description",
+                            }
+                        },
+                        {
+                            "type": "input",
+                            "block_id": "block_mistake",
+                            "label": {
+                                "type": "plain_text",
+                                "text": "Mistake code",
+                                "emoji": True
+                            },
+                            "element": {
+                                "action_id": "text1234",
+                                "type": "static_select",
+                                "placeholder": {
+                                    "type": "plain_text",
+                                    "text": "Select mistake code..."
+                                },
+                                "options": [
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "DE"
+                                        },
+                                        "value": "value-1"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "DE2"
+                                        },
+                                        "value": "value-2"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "QD"
+                                        },
+                                        "value": "value-3"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "PH2"
+                                        },
+                                        "value": "value-4"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "MI"
+                                        },
+                                        "value": "value-5"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "MI2"
+                                        },
+                                        "value": "value-6"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "WA"
+                                        },
+                                        "value": "value-6"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "CM"
+                                        },
+                                        "value": "value-7"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "DG MAJ"
+                                        },
+                                        "value": "value-8"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "UTL"
+                                        },
+                                        "value": "value-9"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "LABEL"
+                                        },
+                                        "value": "value-10"
+                                    }
+                                ]
+                            }
+                        },
+                    ]
+                }
+            )
+        except SlackApiError as e:
+            logger.info(e)
+            print(e)
+
+    @app.view("appeal_mistake_modal")
+    def appeal_mistake_modal(ack, view, body):
+        ack()
+
     # app home view
     user = event["user"]
     try:
@@ -951,7 +1109,21 @@ def app_home_opened(event, logger):
                     },
                     {
                         "type": "divider"
-                    }
+                    },
+                    {
+                        "type": "actions",
+                        "elements": [
+                            {
+                                "type": "button",
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "Appeal Mistake (under dev)",
+                                    "emoji": True
+                                },
+                                "action_id": "appeal_mistake_button_click"
+                            }
+                        ]
+                    },
                 ],
             }
         )
