@@ -384,7 +384,7 @@ def app_home_opened(event, logger):
                                 "type": "static_select",
                                 "placeholder": {
                                     "type": "plain_text",
-                                    "text": "Select a tier",
+                                    "text": "Select a tier...",
                                     "emoji": True
                                 },
                                 "options": [
@@ -457,7 +457,7 @@ def app_home_opened(event, logger):
                                 "type": "multi_static_select",
                                 "placeholder": {
                                     "type": "plain_text",
-                                    "text": "Select mistakes"
+                                    "text": "Select mistakes..."
                                 },
                                 "options": [
                                     {
@@ -691,7 +691,7 @@ def app_home_opened(event, logger):
                                 "type": "static_select",
                                 "placeholder": {
                                     "type": "plain_text",
-                                    "text": "Select a tier",
+                                    "text": "Select a tier...",
                                     "emoji": True
                                 },
                                 "options": [
@@ -764,7 +764,7 @@ def app_home_opened(event, logger):
                                 "type": "multi_static_select",
                                 "placeholder": {
                                     "type": "plain_text",
-                                    "text": "Select mistakes"
+                                    "text": "Select mistakes..."
                                 },
                                 "options": [
                                     {
