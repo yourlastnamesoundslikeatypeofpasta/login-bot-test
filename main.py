@@ -6,6 +6,7 @@ from slack_sdk.errors import SlackApiError
 
 from scripts.command_score import bonus_score
 from scripts.command_score import find_stats
+from scripts.mistake_values import mistake_values
 
 # start Slack app
 app = App(token=os.environ['bot_token'], signing_secret=os.environ['signin_secret'])
@@ -83,6 +84,7 @@ def app_home_opened(event, logger):
     :param logger: console logger
     :return: None
     """
+
     @app.action('score_home_button')
     def score_home_button_click(ack, body):
         """
@@ -349,9 +351,27 @@ def app_home_opened(event, logger):
         :param logger: slack obj
         :return: None
         """
+
+        def build_options(mistake_dict):
+            options_lst = []
+            for mistake_code, point_value in mistake_dict.items():
+                options_lst.append({
+                    "text": {
+                        "type": "plain_text",
+                        "text": f"{mistake_code.upper()}"
+                    },
+                    "value": f"{mistake_code}"
+                }
+                )
+            return options_lst
+
         ack()
         trigger_id = body['trigger_id']
+
         # TODO: Add blocks to seperate dir, and files
+
+        options = build_options(mistake_values)
+
         try:
             app.client.views_open(
                 trigger_id=trigger_id,
@@ -497,85 +517,7 @@ def app_home_opened(event, logger):
                                     "type": "plain_text",
                                     "text": "Select mistakes..."
                                 },
-                                "options": [
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "DE"
-                                        },
-                                        "value": "value-1"
-                                    },
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "DE2"
-                                        },
-                                        "value": "value-2"
-                                    },
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "QD"
-                                        },
-                                        "value": "value-3"
-                                    },
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "PH2"
-                                        },
-                                        "value": "value-4"
-                                    },
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "MI"
-                                        },
-                                        "value": "value-5"
-                                    },
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "MI2"
-                                        },
-                                        "value": "value-6"
-                                    },
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "WA"
-                                        },
-                                        "value": "value-6"
-                                    },
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "CM"
-                                        },
-                                        "value": "value-7"
-                                    },
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "DG MAJ"
-                                        },
-                                        "value": "value-8"
-                                    },
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "UTL"
-                                        },
-                                        "value": "value-9"
-                                    },
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "LABEL"
-                                        },
-                                        "value": "value-10"
-                                    }
-                                ]
+                                "options": options
                             }
                         },
                     ],
@@ -583,6 +525,21 @@ def app_home_opened(event, logger):
             )
         except SlackApiError as e:
             logger.info(f'Error creating view: {e}')
+
+    @app.action("mistake_selections")
+    def handle_some_action(ack, body, logger):
+        ack()
+
+        try:
+            selected_option_values = body['view']['state']['values']['block_mistakes']['mistake_selections'][
+                'selected_options']
+        except KeyError:
+            return
+
+        option_value_lst = []
+        for option_value in selected_option_values:
+            option_value_lst.append(option_value)
+        return option_value_lst
 
     @app.view("calc_piecepay_modal")
     def get_stats_update_calc_piecepay_modal(ack, view, body):
@@ -593,6 +550,7 @@ def app_home_opened(event, logger):
         :param body: slack obj
         :return: None
         """
+
         def get_payout(package_count, weight_count, item_count, tier):
             """
             Calculate logger dollar payout
@@ -634,16 +592,46 @@ def app_home_opened(event, logger):
                     "weight": 0.023
                 }
             }
-
             package_value = tier_value_dict[tier]['packages']
             weight_value = tier_value_dict[tier]['weight']
             item_value = tier_value_dict[tier]['items']
-
             payout_value = (package_value * package_count) + (weight_value * weight_count) + (item_value * item_count)
+
+            try:
+                selected_option_values = body['view']['state']['values']['block_mistakes']['mistake_selections'][
+                    'selected_options']
+            except KeyError:
+                return payout_value
+
+            if selected_option_values:
+                mistake_points = 0
+            for option_value in selected_option_values:
+                mistake_points += mistake_values.get(option_value['value'])
+
+            deduction = 0
+            if mistake_points <= 2:
+                deduction = 0
+            elif 3 <= mistake_points <= 6:
+                deduction = 50
+            elif 7 <= mistake_points <= 9:
+                deduction = 100
+            elif 10 <= mistake_points <= 13:
+                deduction = 150
+            elif 14 <= mistake_points <= 17:
+                deduction = 200
+            elif 18 <= mistake_points <= 21:
+                deduction = 250
+            elif 22 <= mistake_points <= 29:
+                deduction = 300
+            else:
+                payout_value = 0
+                return payout_value
+
+            payout_value -= deduction
+
             return payout_value
 
         ack()
-
         block_input_values = {
             "block_package": view['state']['values']['block_package']['package_input']['value'].strip(' '),
             "block_weight": view['state']['values']['block_weight']['weight_input']['value'].strip(' '),
