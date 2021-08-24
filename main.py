@@ -999,7 +999,6 @@ def app_home_opened(event, logger):
                             "label": {
                                 "type": "plain_text",
                                 "text": "Mistake code",
-                                "emoji": True
                             },
                             "element": {
                                 "action_id": "text1234",
@@ -1086,6 +1085,45 @@ def app_home_opened(event, logger):
                                         },
                                         "value": "value-10"
                                     }
+                                ]
+                            }
+                        },
+                        {
+                            "type": "input",
+                            "block_id": "block_supervisor",
+                            "label": {
+                                "type": "plain_text",
+                                "text": "Shift",
+                            },
+                            "element": {
+                                "action_id": "text1234",
+                                "type": "static_select",
+                                "placeholder": {
+                                    "type": "plain_text",
+                                    "text": "Select shift..."
+                                },
+                                "options": [
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "1st Shift"
+                                        },
+                                        "value": "first_shift"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "2nd Shift"
+                                        },
+                                        "value": "second_shift"
+                                    },
+                                    {
+                                        "text": {
+                                            "type": "plain_text",
+                                            "text": "3rd Shift"
+                                        },
+                                        "value": "third_shift"
+                                    },
                                 ]
                             }
                         },
