@@ -11,35 +11,12 @@ from scripts.base_views import production_calc_base_view
 from scripts.base_views import piece_pay_calc_base_view
 from scripts.validate_input import validate_input
 from scripts.get_payout import get_payout
+from scripts.production_score import get_production_score
+from scripts.get_error_msg_str import get_error_msg_str
 
 # start Slack app
 app = App(token=os.environ['bot_token'], signing_secret=os.environ['signin_secret'])
 BOT_ID = app.client.auth_test()['user_id']
-
-
-def get_error_msg_str(command_name):
-    """
-    Error Message str with command name
-    :param command_name: str, command name
-    :return: str
-    """
-    return f'`Error: Stats not entered correctly. Enter: "/{command_name} help" for help`'
-
-
-def get_production_score(pkgs, weight, items, hours):
-    """
-    Get production score
-    :param pkgs: float, package count
-    :param weight: float, weight of packages
-    :param items: float, items logged in
-    :param hours: float, hours worked
-    :return: float, production score
-    """
-    pkg_points = 14.7
-    item_points = 2.03
-    lbs_points = 0.99
-    score = ((pkg_points * pkgs) + (item_points * items) + (lbs_points * weight)) / hours
-    return score
 
 
 # slack app home modals
