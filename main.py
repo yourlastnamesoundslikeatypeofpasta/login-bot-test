@@ -1,5 +1,6 @@
 import os
 
+from copy import deepcopy
 from slack_bolt import App
 from slack_sdk.errors import SlackApiError
 
@@ -101,131 +102,60 @@ def app_home_opened(event, logger):
             items_per_pkg = item_count / package_count
             production_score = get_production_score(package_count, weight_count, item_count, hour_count)
 
+            view_update_blocks = [
+                {
+                    "type": "section",
+                    "fields": [
+                        {
+                            "type": "mrkdwn",
+                            "text": f"*Packages* :package:: `{package_count:.2f}`"
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": f"*Weight* :weight_lifter:: `{weight_count:.2f}`"
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": f"*Items* :shopping_trolley:: `{item_count:.2f}`"
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": f"*Hours* :clock1:: `{hour_count:.2f}`"
+                        },
+                    ],
+                },
+                {
+                    "type": "divider"
+                },
+                {
+                    "type": "section",
+                    "fields": [
+                        {
+                            "type": "mrkdwn",
+                            "text": f"*Packages/Hour*: `{pkg_per_hour:.2f}`"
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": f"*Weight/Package*: `{weight_per_package:.2f}`"
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": f"*Items/Package*: `{items_per_pkg:.2f}`"
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": f"*Productivity Score:* `{production_score:.2f}` :dash:"
+                        },
+                    ]
+                }
+            ]
+            view_update = deepcopy(production_calc_base_view)
+            for block in view_update_blocks:
+                view_update['blocks'].append(block)
+
             ack({
                 "response_action": "update",
-                "view": {
-                    "type": "modal",
-                    "callback_id": "calc_score_modal",
-                    "title": {
-                        "type": "plain_text",
-                        "text": "Production Calculator"
-                    },
-                    "submit": {
-                        "type": "plain_text",
-                        "text": "Calculate"
-                    },
-                    "blocks": [
-                        {
-                            "type": "input",
-                            "block_id": "block_package",
-                            "element": {
-                                "type": "plain_text_input",
-                                "action_id": "package_input",
-                                "placeholder": {
-                                    "type": "plain_text",
-                                    "text": "300"
-                                }
-                            },
-                            "label": {
-                                "type": "plain_text",
-                                "text": "Packages"
-                            }
-                        },
-                        {
-                            "type": "input",
-                            "block_id": "block_weight",
-                            "element": {
-                                "type": "plain_text_input",
-                                "action_id": "weight_input",
-                                "placeholder": {
-                                    "type": "plain_text",
-                                    "text": "750"
-                                }
-                            },
-                            "label": {
-                                "type": "plain_text",
-                                "text": "Weight"
-                            }
-                        },
-                        {
-                            "type": "input",
-                            "block_id": "block_items",
-                            "element": {
-                                "type": "plain_text_input",
-                                "action_id": "item_input",
-                                "placeholder": {
-                                    "type": "plain_text",
-                                    "text": "450"
-                                }
-                            },
-                            "label": {
-                                "type": "plain_text",
-                                "text": "Items"
-                            }
-                        },
-                        {
-                            "type": "input",
-                            "block_id": "block_hours",
-                            "element": {
-                                "type": "plain_text_input",
-                                "action_id": "hour_input",
-                                "placeholder": {
-                                    "type": "plain_text",
-                                    "text": "7.5"
-                                }
-                            },
-                            "label": {
-                                "type": "plain_text",
-                                "text": "Hours"
-                            }
-                        },
-                        {
-                            "type": "section",
-                            "fields": [
-                                {
-                                    "type": "mrkdwn",
-                                    "text": f"*Packages* :package:: `{package_count:.2f}`"
-                                },
-                                {
-                                    "type": "mrkdwn",
-                                    "text": f"*Weight* :weight_lifter:: `{weight_count:.2f}`"
-                                },
-                                {
-                                    "type": "mrkdwn",
-                                    "text": f"*Items* :shopping_trolley:: `{item_count:.2f}`"
-                                },
-                                {
-                                    "type": "mrkdwn",
-                                    "text": f"*Hours* :clock1:: `{hour_count:.2f}`"
-                                },
-                            ],
-                        },
-                        {
-                            "type": "divider"
-                        },
-                        {
-                            "type": "section",
-                            "fields": [
-                                {
-                                    "type": "mrkdwn",
-                                    "text": f"*Packages/Hour*: `{pkg_per_hour:.2f}`"
-                                },
-                                {
-                                    "type": "mrkdwn",
-                                    "text": f"*Weight/Package*: `{weight_per_package:.2f}`"
-                                },
-                                {
-                                    "type": "mrkdwn",
-                                    "text": f"*Items/Package*: `{items_per_pkg:.2f}`"
-                                },
-                                {
-                                    "type": "mrkdwn",
-                                    "text": f"*Productivity Score:* `{production_score:.2f}` :dash:"
-                                },
-                            ]
-                        }
-                    ],
-                }
+                "view": view_update
             })
         except (SlackApiError, ValueError) as e:
             print(e)
@@ -278,7 +208,6 @@ def app_home_opened(event, logger):
         :param body: slack obj
         :return: None
         """
-
 
         ack()
         block_input_values = {
@@ -344,7 +273,7 @@ def app_home_opened(event, logger):
                 },
             ],
         }
-        view_update = piece_pay_calc_base_view
+        view_update = deepcopy(piece_pay_calc_base_view)
         view_update['blocks'][-1] = view_update_blocks
 
         ack({
