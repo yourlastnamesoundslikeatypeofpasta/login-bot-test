@@ -297,59 +297,60 @@ def app_home_opened(event, logger):
             item_count = float(block_input_values['block_items'])
             tier = view['state']['values']['block_tier']['static_select-action']['selected_option']['text']['text']
             tier_value = view['state']['values']['block_tier']['static_select-action']['selected_option']['value']
-            payout = get_payout(package_count,
-                                weight_count,
-                                item_count,
-                                tier_value,
-                                body)
-
-            # pick age emoji :)
-            if tier_value == 'tier_1':
-                tier_emoji = ':baby:'
-            elif tier_value == 'tier_2':
-                tier_emoji = ':child:'
-            elif tier_value == 'tier_3':
-                tier_emoji = ':older_man:'
-            else:
-                tier_emoji = ''
-
-            # copy base view and add section block
-            view_update_blocks = {
-                "type": "section",
-                "fields": [
-                    {
-                        "type": "mrkdwn",
-                        "text": f"*Packages* :package:: `{package_count:.2f}`"
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": f"*Weight* :weight_lifter:: `{weight_count:.2f}`"
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": f"*Items* :shopping_trolley:: `{item_count:.2f}`"
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": f"*Tier* {tier_emoji}: `{tier}`"
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": f"*Payout:moneybag::* `{payout:.2f}`"
-                    },
-                ],
-            }
-            view_update = piece_pay_calc_base_view
-            view_update['blocks'][-1] = view_update_blocks
-
-            ack({
-                "response_action": "update",
-                "view": view_update
-            })
 
         except (SlackApiError, ValueError) as e:
             print(e)
             logger.info(e)
+
+        payout = get_payout(package_count,
+                            weight_count,
+                            item_count,
+                            tier_value,
+                            body)
+
+        # pick age emoji :)
+        if tier_value == 'tier_1':
+            tier_emoji = ':baby:'
+        elif tier_value == 'tier_2':
+            tier_emoji = ':child:'
+        elif tier_value == 'tier_3':
+            tier_emoji = ':older_man:'
+        else:
+            tier_emoji = ''
+
+        # copy base view and add section block
+        view_update_blocks = {
+            "type": "section",
+            "fields": [
+                {
+                    "type": "mrkdwn",
+                    "text": f"*Packages* :package:: `{package_count:.2f}`"
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": f"*Weight* :weight_lifter:: `{weight_count:.2f}`"
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": f"*Items* :shopping_trolley:: `{item_count:.2f}`"
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": f"*Tier* {tier_emoji}: `{tier}`"
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": f"*Payout:moneybag::* `{payout:.2f}`"
+                },
+            ],
+        }
+        view_update = piece_pay_calc_base_view
+        view_update['blocks'][-1] = view_update_blocks
+
+        ack({
+            "response_action": "update",
+            "view": view_update
+        })
 
     @app.action("appeal_mistake_button_click")
     def appeal_mistake_button_click(ack, body):
