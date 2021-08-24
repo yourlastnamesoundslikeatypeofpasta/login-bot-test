@@ -274,7 +274,7 @@ def app_home_opened(event, logger):
             ],
         }
         view_update = deepcopy(piece_pay_calc_base_view)
-        view_update['blocks'][-1] = view_update_blocks
+        view_update['blocks'].append(view_update_blocks)
 
         ack({
             "response_action": "update",
