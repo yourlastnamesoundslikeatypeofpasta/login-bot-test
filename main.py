@@ -7,6 +7,7 @@ from slack_sdk.errors import SlackApiError
 from scripts.command_score import bonus_score
 from scripts.command_score import find_stats
 
+# start Slack app
 app = App(token=os.environ['bot_token'], signing_secret=os.environ['signin_secret'])
 BOT_ID = app.client.auth_test()['user_id']
 
@@ -21,6 +22,14 @@ def get_error_msg_str(command_name):
 
 
 def get_production_score(pkgs, weight, items, hours):
+    """
+    Get production score
+    :param pkgs: float, package count
+    :param weight: float, weight of packages
+    :param items: float, items logged in
+    :param hours: float, hours worked
+    :return: float, production score
+    """
     pkg_points = 14.7
     item_points = 2.03
     lbs_points = 0.99
@@ -29,11 +38,20 @@ def get_production_score(pkgs, weight, items, hours):
 
 
 def validate_input(b_input_value_dict):
+    """
+    Validate that input is only numbers and contains one decimal point
+    :param b_input_value_dict: dict, production stats
+    :return: dict, response action errors
+    """
+
     # check if input is only numbers
     error_block_id_list = []
     numbers = string.digits
     error_str = 'This entry can only contain numbers'
     for block_id, block_stat in b_input_value_dict.items():
+        if block_stat.count(".") >= 2:
+            error_block_id_list.append((block_id, 'This entry cannot have more than one decimal'))
+            continue
         for number in block_stat:
             if number not in numbers and '.' != number:  # let '.' through. Hours might include them
                 error_block_id_list.append((block_id, error_str))
@@ -56,16 +74,28 @@ def validate_input(b_input_value_dict):
         return response_action_temp
 
 
-# Listen to the app_home_opened Events API event to hear when a user opens your app from the sidebarAd
+# slack app home modals
 @app.event("app_home_opened")
 def app_home_opened(event, logger):
+    """
+    Listens to the app_home_opened Events API event to hear when a user opens your app from the sidebarAd
+    :param event: dict, response from Events API when the home tab is opened https://api.slack.com/events/app_home_opened
+    :param logger: console logger
+    :return: None
+    """
     @app.action('score_home_button')
     def score_home_button_click(ack, body):
+        """
+        Open production score calculator when "Production Calculator" is clicked
+        :param ack: slack obj
+        :param body: slack obj, https://slack.dev/bolt-python/api-docs/slack_bolt/kwargs_injection/args.html#slack_bolt.kwargs_injection.args.Args.action
+        :return: None
+        """
         ack()
         trigger_id = body['trigger_id']
         try:
             # open score input field view
-            score_view_result = app.client.views_open(
+            app.client.views_open(
                 trigger_id=trigger_id,
                 view={
                     "type": "modal",
@@ -144,17 +174,20 @@ def app_home_opened(event, logger):
                             }
                         }
                     ],
-                    "type": "modal"
                 }
             )
             logger.info(result)
-            score_view_id = score_view_result['view']['id']
-            score_view_hash = body['view']['hash']
         except SlackApiError as e:
             logger.info(f'Error creating view: {e}')
 
     @app.view("calc_score_modal")
-    def get_stats_update_calc_score_modal(ack, body, view):
+    def get_stats_update_calc_score_modal(ack, view):
+        """
+        Updated production score calculator modal.
+        :param ack: slack obj
+        :param view: slack obj
+        :return: None
+        """
         ack()
 
         block_values = {
@@ -301,7 +334,6 @@ def app_home_opened(event, logger):
                             ]
                         }
                     ],
-                    "type": "modal"
                 }
             })
         except (SlackApiError, ValueError) as e:
@@ -310,11 +342,18 @@ def app_home_opened(event, logger):
 
     @app.action("piece_pay_home_button")
     def piecepay_home_button_click(ack, body, logger):
+        """
+        Open piece pay calculator when "Piece Pay Calculator" is clicked
+        :param ack: slack obj
+        :param body: slack obj
+        :param logger: slack obj
+        :return: None
+        """
         ack()
         trigger_id = body['trigger_id']
         # TODO: Add blocks to seperate dir, and files
         try:
-            piecepay_view_result = app.client.views_open(
+            app.client.views_open(
                 trigger_id=trigger_id,
                 view={
                     "type": "modal",
@@ -540,7 +579,6 @@ def app_home_opened(event, logger):
                             }
                         },
                     ],
-                    "type": "modal"
                 }
             )
         except SlackApiError as e:
@@ -548,7 +586,22 @@ def app_home_opened(event, logger):
 
     @app.view("calc_piecepay_modal")
     def get_stats_update_calc_piecepay_modal(ack, view, body):
+        """
+        Updated piece pay calculator modal
+        :param ack: slack obj
+        :param view: slack obj
+        :param body: slack obj
+        :return: None
+        """
         def get_payout(package_count, weight_count, item_count, tier):
+            """
+            Calculate logger dollar payout
+            :param package_count: float, packages
+            :param weight_count: float, weight
+            :param item_count: float, items
+            :param tier: str, tier
+            :return: float, dollar payout
+            """
             tier_value_dict = {
                 "tier_1": {
                     "packages": 0.23,
@@ -876,7 +929,6 @@ def app_home_opened(event, logger):
                             }
                         },
                     ],
-                    "type": "modal"
                 }
             })
 
@@ -886,6 +938,12 @@ def app_home_opened(event, logger):
 
     @app.action("appeal_mistake_button_click")
     def appeal_mistake_button_click(ack, body):
+        """
+        Open appeal mistake modal when "Appeal Mistake" is clicked
+        :param ack: slack obj
+        :param body: slack obj
+        :return: None
+        """
         ack()
         trigger_id = body['trigger_id']
         try:
@@ -1040,17 +1098,21 @@ def app_home_opened(event, logger):
 
     @app.view("appeal_mistake_modal")
     def appeal_mistake_modal(ack, view, body):
+        """
+        Updated appeal mistake modal
+        :param ack: slack obj
+        :param view: slack obj
+        :param body: slack obj
+        :return: None
+        """
         ack()
 
     # app home view
     user = event["user"]
     try:
-        # app home view
         result = app.client.views_publish(
             user_id=user,
             view={
-                # Home tabs must be enabled in your app configuration page under "App Home"
-                # and your app must be subscribed to the app_home_opened event
                 "type": "home",
                 "blocks": [
                     {
@@ -1128,8 +1190,6 @@ def app_home_opened(event, logger):
             }
         )
         logger.info(result)
-        home_view_id = result['view']['id']
-        home_view_hash = result['view']['hash']
     except SlackApiError as e:
         logger.error(f"Error fetching conversations: {e}")
 
