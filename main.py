@@ -1,12 +1,15 @@
 import os
-import string
 
 from slack_bolt import App
 from slack_sdk.errors import SlackApiError
 
 from scripts.command_score import bonus_score
 from scripts.command_score import find_stats
-from scripts.mistake_values import mistake_values
+from scripts.values import mistake_values
+from scripts.base_views import production_calc_base_view
+from scripts.base_views import piece_pay_calc_base_view
+from scripts.validate_input import validate_input
+from scripts.get_payout import get_payout
 
 # start Slack app
 app = App(token=os.environ['bot_token'], signing_secret=os.environ['signin_secret'])
@@ -38,43 +41,6 @@ def get_production_score(pkgs, weight, items, hours):
     return score
 
 
-def validate_input(b_input_value_dict):
-    """
-    Validate that input is only numbers and contains one decimal point
-    :param b_input_value_dict: dict, production stats
-    :return: dict, response action errors
-    """
-
-    # check if input is only numbers
-    error_block_id_list = []
-    numbers = string.digits
-    error_str = 'This entry can only contain numbers'
-    for block_id, block_stat in b_input_value_dict.items():
-        if block_stat.count(".") >= 2:
-            error_block_id_list.append((block_id, 'This entry cannot have more than one decimal'))
-            continue
-        for number in block_stat:
-            if number not in numbers and '.' != number:  # let '.' through. Hours might include them
-                error_block_id_list.append((block_id, error_str))
-
-    # check if input starts with '0'
-    error_str = 'This entry cannot start with 0'
-    for block_id, block_stat in b_input_value_dict.items():
-        if block_stat.startswith('0'):
-            error_block_id_list.append((block_id, error_str))
-
-    # create action response
-    if error_block_id_list:
-        response_action_temp = {
-            "response_action": "errors",
-            "errors": {
-            }
-        }
-        for block, error in error_block_id_list:
-            response_action_temp['errors'][block] = error
-        return response_action_temp
-
-
 # slack app home modals
 @app.event("app_home_opened")
 def app_home_opened(event, logger):
@@ -99,84 +65,7 @@ def app_home_opened(event, logger):
             # open score input field view
             app.client.views_open(
                 trigger_id=trigger_id,
-                view={
-                    "type": "modal",
-                    "callback_id": "calc_score_modal",
-                    "title": {
-                        "type": "plain_text",
-                        "text": "Production Calculator"
-                    },
-                    "submit": {
-                        "type": "plain_text",
-                        "text": "Calculate"
-                    },
-                    "blocks": [
-                        {
-                            "type": "input",
-                            "block_id": "block_package",
-                            "element": {
-                                "type": "plain_text_input",
-                                "action_id": "package_input",
-                                "placeholder": {
-                                    "type": "plain_text",
-                                    "text": "300"
-                                }
-                            },
-                            "label": {
-                                "type": "plain_text",
-                                "text": "Packages"
-                            }
-                        },
-                        {
-                            "type": "input",
-                            "block_id": "block_weight",
-                            "element": {
-                                "type": "plain_text_input",
-                                "action_id": "weight_input",
-                                "placeholder": {
-                                    "type": "plain_text",
-                                    "text": "750"
-                                }
-                            },
-                            "label": {
-                                "type": "plain_text",
-                                "text": "Weight"
-                            }
-                        },
-                        {
-                            "type": "input",
-                            "block_id": "block_items",
-                            "element": {
-                                "type": "plain_text_input",
-                                "action_id": "item_input",
-                                "placeholder": {
-                                    "type": "plain_text",
-                                    "text": "450"
-                                }
-                            },
-                            "label": {
-                                "type": "plain_text",
-                                "text": "Items"
-                            }
-                        },
-                        {
-                            "type": "input",
-                            "block_id": "block_hours",
-                            "element": {
-                                "type": "plain_text_input",
-                                "action_id": "hour_input",
-                                "placeholder": {
-                                    "type": "plain_text",
-                                    "text": "7.5"
-                                }
-                            },
-                            "label": {
-                                "type": "plain_text",
-                                "text": "Hours"
-                            }
-                        }
-                    ],
-                }
+                view=production_calc_base_view
             )
             logger.info(result)
         except SlackApiError as e:
@@ -352,176 +241,15 @@ def app_home_opened(event, logger):
         :return: None
         """
 
-        def build_options(mistake_dict):
-            options_lst = []
-            for mistake_code, point_value in mistake_dict.items():
-                options_lst.append({
-                    "text": {
-                        "type": "plain_text",
-                        "text": f"{mistake_code.upper()}"
-                    },
-                    "value": f"{mistake_code}"
-                }
-                )
-            return options_lst
-
         ack()
         trigger_id = body['trigger_id']
 
         # TODO: Add blocks to seperate dir, and files
 
-        options = build_options(mistake_values)
-
         try:
             app.client.views_open(
                 trigger_id=trigger_id,
-                view={
-                    "type": "modal",
-                    "callback_id": "calc_piecepay_modal",
-                    "title": {
-                        "type": "plain_text",
-                        "text": "Piece Pay Calculator"
-                    },
-                    "submit": {
-                        "type": "plain_text",
-                        "text": "Calculate"
-                    },
-                    "blocks": [
-                        {
-                            "type": "input",
-                            "block_id": "block_package",
-                            "element": {
-                                "type": "plain_text_input",
-                                "action_id": "package_input",
-                                "placeholder": {
-                                    "type": "plain_text",
-                                    "text": "300"
-                                }
-                            },
-                            "label": {
-                                "type": "plain_text",
-                                "text": "Packages"
-                            }
-                        },
-                        {
-                            "type": "input",
-                            "block_id": "block_weight",
-                            "element": {
-                                "type": "plain_text_input",
-                                "action_id": "weight_input",
-                                "placeholder": {
-                                    "type": "plain_text",
-                                    "text": "750"
-                                }
-                            },
-                            "label": {
-                                "type": "plain_text",
-                                "text": "Weight"
-                            }
-                        },
-                        {
-                            "type": "input",
-                            "block_id": "block_items",
-                            "element": {
-                                "type": "plain_text_input",
-                                "action_id": "item_input",
-                                "placeholder": {
-                                    "type": "plain_text",
-                                    "text": "450"
-                                }
-                            },
-                            "label": {
-                                "type": "plain_text",
-                                "text": "Items"
-                            }
-                        },
-                        {
-                            "type": "input",
-                            "block_id": "block_tier",
-                            "element": {
-                                "type": "static_select",
-                                "placeholder": {
-                                    "type": "plain_text",
-                                    "text": "Select a tier...",
-                                    "emoji": True
-                                },
-                                "options": [
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "Tier 1",
-                                            "emoji": True
-                                        },
-                                        "value": "tier_1"
-                                    },
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "Tier 2",
-                                            "emoji": True
-                                        },
-                                        "value": "tier_2"
-                                    },
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "Tier 3",
-                                            "emoji": True
-                                        },
-                                        "value": "tier_3"
-                                    },
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "Personal Shopper",
-                                            "emoji": True
-                                        },
-                                        "value": "personal_shopper"
-                                    },
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "Special Handling",
-                                            "emoji": True
-                                        },
-                                        "value": "special_handling"
-                                    },
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "Heavies",
-                                            "emoji": True
-                                        },
-                                        "value": "heavies"
-                                    }
-                                ],
-                                "action_id": "static_select-action"
-                            },
-                            "label": {
-                                "type": "plain_text",
-                                "text": "Tier",
-                                "emoji": True
-                            }
-                        },
-                        {
-                            "type": "section",
-                            "block_id": "block_mistakes",
-                            "text": {
-                                "type": "mrkdwn",
-                                "text": "Mistakes - *_optional_* (under development)"
-                            },
-                            "accessory": {
-                                "action_id": "mistake_selections",
-                                "type": "multi_static_select",
-                                "placeholder": {
-                                    "type": "plain_text",
-                                    "text": "Select mistakes..."
-                                },
-                                "options": options
-                            }
-                        },
-                    ],
-                }
+                view=piece_pay_calc_base_view
             )
         except SlackApiError as e:
             logger.info(f'Error creating view: {e}')
@@ -551,85 +279,6 @@ def app_home_opened(event, logger):
         :return: None
         """
 
-        def get_payout(package_count, weight_count, item_count, tier):
-            """
-            Calculate logger dollar payout
-            :param package_count: float, packages
-            :param weight_count: float, weight
-            :param item_count: float, items
-            :param tier: str, tier
-            :return: float, dollar payout
-            """
-            tier_value_dict = {
-                "tier_1": {
-                    "packages": 0.23,
-                    "items": 0.07,
-                    "weight": 0
-                },
-                "tier_2": {
-                    "packages": 0.23,
-                    "items": 0.08,
-                    "weight": 0
-                },
-                "tier_3": {
-                    "packages": 0.26,
-                    "items": 0.08,
-                    "weight": 0
-                },
-                "personal_shopper": {
-                    "packages": 0.25,
-                    "items": 0.02,
-                    "weight": 0
-                },
-                "special_handling": {
-                    "packages": 0.08,
-                    "items": 0.15,
-                    "weight": 0
-                },
-                "heavies": {
-                    "packages": 0.25,
-                    "items": 0.08,
-                    "weight": 0.023
-                }
-            }
-            package_value = tier_value_dict[tier]['packages']
-            weight_value = tier_value_dict[tier]['weight']
-            item_value = tier_value_dict[tier]['items']
-            payout_value = (package_value * package_count) + (weight_value * weight_count) + (item_value * item_count)
-
-            try:
-                selected_option_values = body['view']['state']['values']['block_mistakes']['mistake_selections'][
-                    'selected_options']
-            except KeyError:
-                return payout_value
-
-            if selected_option_values:
-                mistake_points = 0
-            for option_value in selected_option_values:
-                mistake_points += mistake_values.get(option_value['value'])
-
-            deduction = 0
-            if mistake_points <= 2:
-                deduction = 0
-            elif 3 <= mistake_points <= 6:
-                deduction = 50
-            elif 7 <= mistake_points <= 9:
-                deduction = 100
-            elif 10 <= mistake_points <= 13:
-                deduction = 150
-            elif 14 <= mistake_points <= 17:
-                deduction = 200
-            elif 18 <= mistake_points <= 21:
-                deduction = 250
-            elif 22 <= mistake_points <= 29:
-                deduction = 300
-            else:
-                payout_value = 0
-                return payout_value
-
-            payout_value -= deduction
-
-            return payout_value
 
         ack()
         block_input_values = {
@@ -651,7 +300,8 @@ def app_home_opened(event, logger):
             payout = get_payout(package_count,
                                 weight_count,
                                 item_count,
-                                tier_value)
+                                tier_value,
+                                body)
 
             # pick age emoji :)
             if tier_value == 'tier_1':
@@ -663,261 +313,38 @@ def app_home_opened(event, logger):
             else:
                 tier_emoji = ''
 
+            # copy base view and add section block
+            view_update_blocks = {
+                "type": "section",
+                "fields": [
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Packages* :package:: `{package_count:.2f}`"
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Weight* :weight_lifter:: `{weight_count:.2f}`"
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Items* :shopping_trolley:: `{item_count:.2f}`"
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Tier* {tier_emoji}: `{tier}`"
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Payout:moneybag::* `{payout:.2f}`"
+                    },
+                ],
+            }
+            view_update = piece_pay_calc_base_view
+            view_update['blocks'][-1] = view_update_blocks
+
             ack({
                 "response_action": "update",
-                "view": {
-                    "type": "modal",
-                    "callback_id": "calc_piecepay_modal",
-                    "title": {
-                        "type": "plain_text",
-                        "text": "Piece Pay Calculator"
-                    },
-                    "submit": {
-                        "type": "plain_text",
-                        "text": "Calculate"
-                    },
-                    "blocks": [
-                        {
-                            "type": "input",
-                            "block_id": "block_package",
-                            "element": {
-                                "type": "plain_text_input",
-                                "action_id": "package_input",
-                                "placeholder": {
-                                    "type": "plain_text",
-                                    "text": "300"
-                                }
-                            },
-                            "label": {
-                                "type": "plain_text",
-                                "text": "Packages"
-                            }
-                        },
-                        {
-                            "type": "input",
-                            "block_id": "block_weight",
-                            "element": {
-                                "type": "plain_text_input",
-                                "action_id": "weight_input",
-                                "placeholder": {
-                                    "type": "plain_text",
-                                    "text": "750"
-                                }
-                            },
-                            "label": {
-                                "type": "plain_text",
-                                "text": "Weight"
-                            }
-                        },
-                        {
-                            "type": "input",
-                            "block_id": "block_items",
-                            "element": {
-                                "type": "plain_text_input",
-                                "action_id": "item_input",
-                                "placeholder": {
-                                    "type": "plain_text",
-                                    "text": "450"
-                                }
-                            },
-                            "label": {
-                                "type": "plain_text",
-                                "text": "Items"
-                            }
-                        },
-                        {
-                            "type": "input",
-                            "block_id": "block_tier",
-                            "element": {
-                                "type": "static_select",
-                                "placeholder": {
-                                    "type": "plain_text",
-                                    "text": "Select a tier...",
-                                    "emoji": True
-                                },
-                                "options": [
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "Tier 1",
-                                            "emoji": True
-                                        },
-                                        "value": "tier_1"
-                                    },
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "Tier 2",
-                                            "emoji": True
-                                        },
-                                        "value": "tier_2"
-                                    },
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "Tier 3",
-                                            "emoji": True
-                                        },
-                                        "value": "tier_3"
-                                    },
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "Personal Shopper",
-                                            "emoji": True
-                                        },
-                                        "value": "personal_shopper"
-                                    },
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "Special Handling",
-                                            "emoji": True
-                                        },
-                                        "value": "special_handling"
-                                    },
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "Heavies",
-                                            "emoji": True
-                                        },
-                                        "value": "heavies"
-                                    }
-                                ],
-                                "action_id": "static_select-action"
-                            },
-                            "label": {
-                                "type": "plain_text",
-                                "text": "Tier",
-                                "emoji": True
-                            }
-                        },
-                        {
-                            "type": "section",
-                            "block_id": "block_mistakes",
-                            "text": {
-                                "type": "mrkdwn",
-                                "text": "Mistakes - *_optional_* (under development)"
-                            },
-                            "accessory": {
-                                "action_id": "mistake_selections",
-                                "type": "multi_static_select",
-                                "placeholder": {
-                                    "type": "plain_text",
-                                    "text": "Select mistakes..."
-                                },
-                                "options": [
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "DE"
-                                        },
-                                        "value": "value-1"
-                                    },
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "DE2"
-                                        },
-                                        "value": "value-2"
-                                    },
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "QD"
-                                        },
-                                        "value": "value-3"
-                                    },
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "PH2"
-                                        },
-                                        "value": "value-4"
-                                    },
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "MI"
-                                        },
-                                        "value": "value-5"
-                                    },
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "MI2"
-                                        },
-                                        "value": "value-6"
-                                    },
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "WA"
-                                        },
-                                        "value": "value-6"
-                                    },
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "CM"
-                                        },
-                                        "value": "value-7"
-                                    },
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "DG MAJ"
-                                        },
-                                        "value": "value-8"
-                                    },
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "UTL"
-                                        },
-                                        "value": "value-9"
-                                    },
-                                    {
-                                        "text": {
-                                            "type": "plain_text",
-                                            "text": "LABEL"
-                                        },
-                                        "value": "value-10"
-                                    }
-                                ]
-                            }
-                        },
-                        {
-                            "type": "section",
-                            "fields": [
-                                {
-                                    "type": "mrkdwn",
-                                    "text": f"*Packages* :package:: `{package_count:.2f}`"
-                                },
-                                {
-                                    "type": "mrkdwn",
-                                    "text": f"*Weight* :weight_lifter:: `{weight_count:.2f}`"
-                                },
-                                {
-                                    "type": "mrkdwn",
-                                    "text": f"*Items* :shopping_trolley:: `{item_count:.2f}`"
-                                },
-                                {
-                                    "type": "mrkdwn",
-                                    "text": f"*Tier* {tier_emoji}: `{tier}`"
-                                },
-                            ],
-                        },
-                        {
-                            "type": "section",
-                            "text": {
-                                "type": "mrkdwn",
-                                "text": f"*Payout:moneybag::* `{payout:.2f}` "
-                            }
-                        },
-                    ],
-                }
+                "view": view_update
             })
 
         except (SlackApiError, ValueError) as e:
