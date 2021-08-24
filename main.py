@@ -13,7 +13,7 @@ from scripts.validate_input import validate_input
 from scripts.get_payout import get_payout
 from scripts.production_score import get_production_score
 from scripts.get_error_msg_str import get_error_msg_str
-
+from scripts.base_views import home_base_view
 # start Slack app
 app = App(token=os.environ['bot_token'], signing_secret=os.environ['signin_secret'])
 BOT_ID = app.client.auth_test()['user_id']
@@ -469,85 +469,11 @@ def app_home_opened(event, logger):
 
     # app home view
     user = event["user"]
+    view = home_base_view(event)
     try:
         result = app.client.views_publish(
             user_id=user,
-            view={
-                "type": "home",
-                "blocks": [
-                    {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": f"*Welcome home, <@{user}> :house:*",
-                        },
-                    },
-                    {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": "Learn how home tabs can be more useful and interactive <https://api.slack.com/surfaces/tabs/using|*in the documentation*>.",
-                        },
-                    },
-                    {"type": "divider"},
-                    {
-                        "type": "context",
-                        "elements": [
-                            {
-                                "type": "mrkdwn",
-                                "text": "Link to login-bot-test code: Github <https://github.com/yourlastnamesoundslikeatypeofpasta/login-bot-test|link>",
-                            }
-                        ],
-                    },
-                    {"type": "divider"},
-                    {
-                        "type": "header",
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Calculators",
-                            "emoji": True
-                        }
-                    },
-                    {
-                        "type": "actions",
-                        "elements": [
-                            {
-                                "type": "button",
-                                "text": {
-                                    "type": "plain_text",
-                                    "text": "Productivity Score Calculator"
-                                },
-                                "action_id": "score_home_button"
-                            },
-                            {
-                                "type": "button",
-                                "text": {
-                                    "type": "plain_text",
-                                    "text": "Piece Pay Calculator"
-                                },
-                                "action_id": "piece_pay_home_button"
-                            }
-                        ]
-                    },
-                    {
-                        "type": "divider"
-                    },
-                    {
-                        "type": "actions",
-                        "elements": [
-                            {
-                                "type": "button",
-                                "text": {
-                                    "type": "plain_text",
-                                    "text": "Appeal Mistake (under dev)",
-                                    "emoji": True
-                                },
-                                "action_id": "appeal_mistake_button_click"
-                            }
-                        ]
-                    },
-                ],
-            }
+            view=view
         )
         logger.info(result)
     except SlackApiError as e:
