@@ -1,5 +1,3 @@
-from slack_sdk.scim.v1 import user
-
 from scripts.values import mistake_values
 
 
@@ -17,84 +15,88 @@ def build_options(mistake_dict):
     return options_lst
 
 
-options = build_options(mistake_values)
-
-home_base_view = {
-                "type": "home",
-                "blocks": [
+def home_base_view(event):
+    user = event['user']
+    view = {
+        "type": "home",
+        "blocks": [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"*Welcome home, <@{user}> :house:*",
+                },
+            },
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "Learn how home tabs can be more useful and interactive <https://api.slack.com/surfaces/tabs/using|*in the documentation*>.",
+                },
+            },
+            {"type": "divider"},
+            {
+                "type": "context",
+                "elements": [
                     {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": f"*Welcome home, <@{user}> :house:*",
-                        },
-                    },
+                        "type": "mrkdwn",
+                        "text": "Link to login-bot-test code: Github <https://github.com/yourlastnamesoundslikeatypeofpasta/login-bot-test|link>",
+                    }
+                ],
+            },
+            {"type": "divider"},
+            {
+                "type": "header",
+                "text": {
+                    "type": "plain_text",
+                    "text": "Calculators",
+                    "emoji": True
+                }
+            },
+            {
+                "type": "actions",
+                "elements": [
                     {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": "Learn how home tabs can be more useful and interactive <https://api.slack.com/surfaces/tabs/using|*in the documentation*>.",
-                        },
-                    },
-                    {"type": "divider"},
-                    {
-                        "type": "context",
-                        "elements": [
-                            {
-                                "type": "mrkdwn",
-                                "text": "Link to login-bot-test code: Github <https://github.com/yourlastnamesoundslikeatypeofpasta/login-bot-test|link>",
-                            }
-                        ],
-                    },
-                    {"type": "divider"},
-                    {
-                        "type": "header",
+                        "type": "button",
                         "text": {
                             "type": "plain_text",
-                            "text": "Calculators",
+                            "text": "Productivity Score Calculator"
+                        },
+                        "action_id": "score_home_button"
+                    },
+                    {
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Piece Pay Calculator"
+                        },
+                        "action_id": "piece_pay_home_button"
+                    }
+                ]
+            },
+            {
+                "type": "divider"
+            },
+            {
+                "type": "actions",
+                "elements": [
+                    {
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Appeal Mistake (under dev)",
                             "emoji": True
-                        }
-                    },
-                    {
-                        "type": "actions",
-                        "elements": [
-                            {
-                                "type": "button",
-                                "text": {
-                                    "type": "plain_text",
-                                    "text": "Productivity Score Calculator"
-                                },
-                                "action_id": "score_home_button"
-                            },
-                            {
-                                "type": "button",
-                                "text": {
-                                    "type": "plain_text",
-                                    "text": "Piece Pay Calculator"
-                                },
-                                "action_id": "piece_pay_home_button"
-                            }
-                        ]
-                    },
-                    {
-                        "type": "divider"
-                    },
-                    {
-                        "type": "actions",
-                        "elements": [
-                            {
-                                "type": "button",
-                                "text": {
-                                    "type": "plain_text",
-                                    "text": "Appeal Mistake (under dev)",
-                                    "emoji": True
-                                },
-                                "action_id": "appeal_mistake_button_click"
-                            }
-                        ]
-                    },
-                ],
-            }
+                        },
+                        "action_id": "appeal_mistake_button_click"
+                    }
+                ]
+            },
+        ],
+    }
+    return view
+
+
+options = build_options(mistake_values)
 
 production_calc_base_view = {
     "type": "modal",
