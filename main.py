@@ -540,7 +540,9 @@ def app_home_opened(event, logger):
         logger.info(result)
     except SlackApiError as e:
         logger.error(f"Error fetching conversations: {e}")
-    print(f'User: {user}')
+    user_info = app.client.users_info(user=user)
+    user_name = user_info['user']['name']
+    print(f'User: {user_name}')
 
 
 # slack commands
