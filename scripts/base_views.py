@@ -323,3 +323,47 @@ piece_pay_calc_base_view = {
         },
     ],
 }
+
+static_select_view_push = {
+    "type": "modal",
+    "callback_id": "static_select_modal",
+    "title": {
+        "type": "plain_text",
+        "text": "Select Mistakes"
+    },
+    "submit": {
+        "type": "plain_text",
+        "text": "Add Mistakes",
+    },
+    "close": {
+        "type": "plain_text",
+        "text": "Close",
+    },
+    "blocks": [
+        {
+            "type": "actions",
+            "block_id": "block_static_mistake",
+            "elements": [
+                {
+                    "type": "static_select",
+                    "placeholder": {
+                        "type": "plain_text",
+                        "text": "Select Mistake..."
+                    },
+                    "action_id": "action_static_mistake",
+                    "options": options
+                },
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "Add"
+                    },
+                    "action_id": "add_mistake_button",
+                    "style": "danger"
+                }
+            ]
+        },
+    ]
+}
+
