@@ -339,6 +339,7 @@ static_select_view_push = {
         "type": "plain_text",
         "text": "Close",
     },
+    "notify_on_close": True,
     "blocks": [
         {
             "type": "actions",
@@ -363,7 +364,7 @@ static_select_view_push = {
                     "style": "danger"
                 }
             ]
-        },
+        }
     ]
 }
 

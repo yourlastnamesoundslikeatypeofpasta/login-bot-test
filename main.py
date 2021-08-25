@@ -1,4 +1,6 @@
 import os
+import sqlite3
+from pprint import pprint
 
 from copy import deepcopy
 from slack_bolt import App
@@ -16,6 +18,7 @@ from scripts.get_error_msg_str import get_error_msg_str
 from scripts.base_views import home_base_view
 from scripts.base_views import build_options
 from scripts.base_views import static_select_view_push
+from scripts.values import selected_mistake_codes
 
 # start Slack app
 app = App(token=os.environ['bot_token'], signing_secret=os.environ['signin_secret'])
@@ -154,18 +157,18 @@ def app_home_opened(event, logger):
         ack()
         trigger_id = body['trigger_id']
 
-        # TODO: Add blocks to seperate dir, and files
+        # TODO: Add blocks to separate dir, and files
 
         try:
             app.client.views_open(
                 trigger_id=trigger_id,
-                view=piece_pay_calc_base_view
+                view=piece_pay_calc_base_view,
             )
         except SlackApiError as e:
             logger.info(f'Error creating view: {e}')
 
     @app.action("mistake_selections")
-    def mistake_selected(ack, body, logger):
+    def mistake_selected(ack, logger):
         ack()
         logger.info(e)
         """try:
@@ -188,55 +191,149 @@ def app_home_opened(event, logger):
         try:
             app.client.views_push(
                 trigger_id=trigger_id,
-                view=static_select_view_push
+                view=static_select_view_push,
             )
         except SlackApiError as e:
             print(e.response)
+
 
     @app.action("action_static_mistake")
     def mistake_selected(ack, body, logger):
         ack()
         logger.info(body)
 
-    @app.action("add_mistake_button")
-    def mistake_view_update(ack, body, views):
-        ack()
-        points = 0
-        mistake_code = \
-            body['view']['state']['values']['block_static_mistake']['action_static_mistake']['selected_option']['value']
-        mistake_point_value = mistake_values[mistake_code]
-        points += mistake_point_value
+    def add_mistake(body, context, next):
+        try:
+            mistake_code = \
+                body['view']['state']['values']['block_static_mistake']['action_static_mistake']['selected_option'][
+                    'value']
+        except KeyError:
+            next()
+        selected_mistake_codes.append(mistake_code)
+        context['create_mistake_block_for'] = mistake_code
+        print(selected_mistake_codes)
+        next()
 
-        view_update_blocks = {
-            "type": "section",
-            "text": {
-                "type": "plain_text",
-                "text": f"Mistake: {mistake_code.upper()}\n Mistake Point Value: {mistake_point_value}",
-            },
-            "accessory": {
-                "type": "button",
-                "action_id": "action_delete_mistake",
+    def fetch_mistakes(context, next):
+        context['mistakes'] = selected_mistake_codes
+        next()
+
+    def create_mistake_blocks(context, next):
+        mistake_blocks = []
+        for mistake in context['mistakes']:
+            mistake_point_value = mistake_values[mistake]
+            view_update_blocks = {
+                "type": "section",
                 "text": {
                     "type": "plain_text",
-                    "text": "Delete",
+                    "text": f"Mistake: {mistake.upper()}\n Mistake Point Value: {mistake_point_value}",
                 },
-                "style": "danger"
+                "accessory": {
+                    "type": "button",
+                    "action_id": "action_delete_mistake",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "Delete",
+                    },
+                    "style": "danger"
+                }
             }
-        }
-        view_update = static_select_view_push  # TODO: mistakes not disappearing when calculator closes
-        len_block_update = len(view_update['blocks'])
+            mistake_blocks.append(view_update_blocks)
 
-        # insert first block at the top and then future blocks under the first block
-        if len_block_update == 1:
-            view_update['blocks'].insert(0, view_update_blocks)
-        elif len_block_update > 1:
-            block_index = len_block_update - 1
-            view_update['blocks'].insert(block_index, view_update_blocks)
+        add_mistake_button = {
+            "type": "actions",
+            "block_id": "block_static_mistake",
+            "elements": [
+                {
+                    "type": "static_select",
+                    "placeholder": {
+                        "type": "plain_text",
+                        "text": "Select Mistake..."
+                    },
+                    "action_id": "action_static_mistake",
+                    "options": build_options(mistake_values)
+                },
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "Add"
+                    },
+                    "action_id": "add_mistake_button",
+                    "style": "danger"
+                }
+            ]
+        }
+        mistake_blocks.append(add_mistake_button)
+
+        context['mistake_blocks'] = mistake_blocks
+        next()
+
+    def delete_mistake(next, body):
+        mistake_code = \
+            body['view']['state']['values']['block_static_mistake']['action_static_mistake']['selected_option'][
+                'value']
+        selected_mistake_codes.remove(mistake_code)
+        next()
+
+    @app.action("add_mistake_button", middleware=[add_mistake, fetch_mistakes, create_mistake_blocks])
+    def mistake_view_update(ack, body, context):
+        ack()
         view_id = body['view']['id']
         app.client.views_update(
             view_id=view_id,
-            view=view_update
+            view={
+                "type": "modal",
+                "callback_id": "static_select_modal",
+                "notify_on_close": True,
+                "title": {
+                    "type": "plain_text",
+                    "text": "Select Mistakes"
+                },
+                "submit": {
+                    "type": "plain_text",
+                    "text": "Add Mistakes",
+                },
+                "close": {
+                    "type": "plain_text",
+                    "text": "Close",
+                },
+                "blocks": context["mistake_blocks"]
+            }
         )
+
+    @app.action("action_delete_mistake", middleware=[fetch_mistakes, delete_mistake, create_mistake_blocks])
+    def delete_mistake_view(ack, body, context):
+        ack()
+        view_id = body['view']['id']
+        app.client.views_update(
+            view_id=view_id,
+            view={
+                "type": "modal",
+                "callback_id": "static_select_modal",
+                "title": {
+                    "type": "plain_text",
+                    "text": "Select Mistakes"
+                },
+                "submit": {
+                    "type": "plain_text",
+                    "text": "Add Mistakes",
+                },
+                "close": {
+                    "type": "plain_text",
+                    "text": "Close",
+                },
+                "blocks": context['mistake_blocks']
+            }
+        )
+
+    @app.view_closed("static_select_modal")
+    def handle_view_events(ack, body, logger):
+        ack()
+        print(body)
+        selected_mistake_codes = []
+        print(selected_mistake_codes)
+        logger.info(body)
 
     @app.view("calc_piecepay_modal")
     def get_stats_update_calc_piecepay_modal(ack, view, body):
@@ -539,7 +636,7 @@ def app_home_opened(event, logger):
         )
         logger.info(result)
     except SlackApiError as e:
-        logger.error(f"Error fetching conversations: {e}")
+        logger.error(f"Error publishing home tab: {e}")
     user_info = app.client.users_info(user=user)
     user_name = user_info['user']['name']
     print(f'User: {user_name}')
