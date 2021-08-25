@@ -199,12 +199,44 @@ def app_home_opened(event, logger):
         logger.info(body)
 
     @app.action("add_mistake_button")
-    def mistake_view_update(ack, body, logger):
+    def mistake_view_update(ack, body, views):
         ack()
-        print(body['view']['state']['values']['block_static_mistake']['action_static_mistake']['selected_option']['value'])
-        logger.info(body)
-        updated_view_blocks = 1
+        points = 0
+        mistake_code = \
+            body['view']['state']['values']['block_static_mistake']['action_static_mistake']['selected_option']['value']
+        mistake_point_value = mistake_values[mistake_code]
+        points += mistake_point_value
 
+        view_update_blocks = {
+            "type": "section",
+            "text": {
+                "type": "plain_text",
+                "text": f"Mistake: {mistake_code.upper()}\n Mistake Point Value: {mistake_point_value}",
+            },
+            "accessory": {
+                "type": "button",
+                "action_id": "action_delete_mistake",
+                "text": {
+                    "type": "plain_text",
+                    "text": "Delete",
+                },
+                "style": "danger"
+            }
+        }
+        view_update = static_select_view_push  # TODO: mistakes not disappearing when calculator closes
+        len_block_update = len(view_update['blocks'])
+
+        # insert first block at the top and then future blocks under the first block
+        if len_block_update == 1:
+            view_update['blocks'].insert(0, view_update_blocks)
+        elif len_block_update > 1:
+            block_index = len_block_update - 1
+            view_update['blocks'].insert(block_index, view_update_blocks)
+        view_id = body['view']['id']
+        app.client.views_update(
+            view_id=view_id,
+            view=view_update
+        )
 
     @app.view("calc_piecepay_modal")
     def get_stats_update_calc_piecepay_modal(ack, view, body):
@@ -508,6 +540,7 @@ def app_home_opened(event, logger):
         logger.info(result)
     except SlackApiError as e:
         logger.error(f"Error fetching conversations: {e}")
+    print(f'User: {user}')
 
 
 # slack commands
