@@ -15,6 +15,7 @@ from scripts.production_score import get_production_score
 from scripts.get_error_msg_str import get_error_msg_str
 from scripts.base_views import home_base_view
 from scripts.base_views import build_options
+from scripts.base_views import static_select_view_push
 
 # start Slack app
 app = App(token=os.environ['bot_token'], signing_secret=os.environ['signin_secret'])
@@ -166,8 +167,8 @@ def app_home_opened(event, logger):
     @app.action("mistake_selections")
     def mistake_selected(ack, body, logger):
         ack()
-
-        try:
+        logger.info(e)
+        """try:
             selected_option_values = body['view']['state']['values']['block_mistakes']['mistake_selections'][
                 'selected_options']
         except KeyError:
@@ -176,56 +177,34 @@ def app_home_opened(event, logger):
         option_value_lst = []
         for option_value in selected_option_values:
             option_value_lst.append(option_value)
-        return option_value_lst
+        return option_value_lst"""
 
     @app.action('add_mistakes_button_click')
     def open_mistake_view(ack, body):
         ack()
         options = build_options(mistake_values)
         trigger_id = body['trigger_id']
-        multi_select_view_push = {
-                "type": "modal",
-                "callback_id": "test",
-                "title": {
-                    "type": "plain_text",
-                    "text": "Select Mistakes"
-                },
-                "submit": {
-                    "type": "plain_text",
-                    "text": "Submit Mistakes",
-                },
-                "close": {
-                    "type": "plain_text",
-                    "text": "Close",
-                },
-                "blocks": [
-                    {
-                        "type": "section",
-                        "block_id": "block_mistakes",
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Mistake Codes"
-                        },
-                        "accessory": {
-                            "type": "multi_static_select",
-                            "action_id": "mistake_selections",
-                            "placeholder": {
-                                "type": "plain_text",
-                                "text": "Select mistakes..."
-                            },
-                            "options": options
-                        }
-                    }
-                ]
-            }
 
         try:
             app.client.views_push(
                 trigger_id=trigger_id,
-                view=multi_select_view_push
+                view=static_select_view_push
             )
         except SlackApiError as e:
             print(e.response)
+
+    @app.action("action_static_mistake")
+    def mistake_selected(ack, body, logger):
+        ack()
+        logger.info(body)
+
+    @app.action("add_mistake_button")
+    def mistake_view_update(ack, body, logger):
+        ack()
+        print(body['view']['state']['values']['block_static_mistake']['action_static_mistake']['selected_option']['value'])
+        logger.info(body)
+        updated_view_blocks = 1
+
 
     @app.view("calc_piecepay_modal")
     def get_stats_update_calc_piecepay_modal(ack, view, body):
