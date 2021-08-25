@@ -307,19 +307,18 @@ piece_pay_calc_base_view = {
         },
         {
             "type": "section",
-            "block_id": "block_mistakes",
             "text": {
                 "type": "mrkdwn",
-                "text": "Mistakes - *_optional_* (under development)"
+                "text": "Add mistakes - _*(optional)*_"
             },
             "accessory": {
-                "action_id": "mistake_selections",
-                "type": "multi_static_select",
-                "placeholder": {
+                "type": "button",
+                "action_id": "add_mistakes_button_click",
+                "text": {
                     "type": "plain_text",
-                    "text": "Select mistakes..."
+                    "text": "Add",
                 },
-                "options": options
+                "style": "danger"
             }
         },
     ],
