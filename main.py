@@ -196,7 +196,6 @@ def app_home_opened(event, logger):
         except SlackApiError as e:
             print(e.response)
 
-
     @app.action("action_static_mistake")
     def mistake_selected(ack, body, logger):
         ack()
@@ -210,8 +209,6 @@ def app_home_opened(event, logger):
         except KeyError:
             next()
         selected_mistake_codes.append(mistake_code)
-        context['create_mistake_block_for'] = mistake_code
-        print(selected_mistake_codes)
         next()
 
     def fetch_mistakes(context, next):
@@ -330,9 +327,7 @@ def app_home_opened(event, logger):
     @app.view_closed("static_select_modal")
     def handle_view_events(ack, body, logger):
         ack()
-        print(body)
-        selected_mistake_codes = []
-        print(selected_mistake_codes)
+        selected_mistake_codes.clear()
         logger.info(body)
 
     @app.view("calc_piecepay_modal")
