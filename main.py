@@ -258,6 +258,10 @@ def create_mistake_blocks(context, next):
             }
         }
         mistake_blocks.append(view_update_blocks)
+        divider = 		{
+			"type": "divider"
+		}
+        mistake_blocks.append(divider)
 
     add_mistake_button = {
         "type": "actions",
@@ -349,6 +353,10 @@ def delete_mistake_view(ack, body, context):
         }
     )
 
+@app.view("static_select_modal")
+def handle_view_events(ack, body, logger):
+    ack()
+    logger.info(body)
 
 @app.view_closed("static_select_modal")
 def handle_view_events(ack, body, logger):
@@ -651,7 +659,7 @@ def appeal_mistake_modal(ack, view, body):
 
 
 @app.message(re.compile("(hi|hello|hey|yo)"))
-def handle_message_events(message, say):
+def say_hello(message, say):
     greeting_lst = ['hello', 'hi', 'whats up']
     greeting = random.choice(greeting_lst)
     user = message['user']
