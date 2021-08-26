@@ -1,6 +1,8 @@
 import os
 import sqlite3
 from pprint import pprint
+import re
+import random
 
 from copy import deepcopy
 from slack_bolt import App
@@ -383,15 +385,14 @@ def get_stats_update_calc_piecepay_modal(ack, view, body, logger):
         tier = view['state']['values']['block_tier']['static_select-action']['selected_option']['text']['text']
         tier_value = view['state']['values']['block_tier']['static_select-action']['selected_option']['value']
 
+        payout = get_payout(package_count,
+                            weight_count,
+                            item_count,
+                            tier_value,
+                            body)
     except (SlackApiError, ValueError) as e:
         print(e)
         logger.info(e)
-
-    payout = get_payout(package_count,
-                        weight_count,
-                        item_count,
-                        tier_value,
-                        body)
 
     # pick age emoji :)
     if tier_value == 'tier_1':
@@ -647,6 +648,19 @@ def appeal_mistake_modal(ack, view, body):
         :return: None
         """
     ack()
+
+
+@app.message(re.compile("(hi|hello|hey|yo)"))
+def handle_message_events(message, say):
+    greeting_lst = ['hello', 'hi', 'whats up']
+    greeting = random.choice(greeting_lst)
+    user = message['user']
+    say(f'{greeting} <@{user}>!✌')
+
+
+@app.event("message")
+def handle_message_events(body, logger):
+    logger.info(body)
 
 
 # slack commands
