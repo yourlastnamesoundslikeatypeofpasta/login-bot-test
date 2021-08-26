@@ -309,14 +309,14 @@ piece_pay_calc_base_view = {
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "Add mistakes - _*(optional)*_"
+                "text": f"Mistake Points: 0"
             },
             "accessory": {
                 "type": "button",
                 "action_id": "add_mistakes_button_click",
                 "text": {
                     "type": "plain_text",
-                    "text": "Add",
+                    "text": "Add Mistake",
                 },
                 "style": "danger"
             }
