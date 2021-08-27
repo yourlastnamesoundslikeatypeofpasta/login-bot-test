@@ -4,11 +4,13 @@ import hashlib
 import json
 import string
 import time
+from statistics import mean
 
 
 class DiscardToken:
     def __init__(self):
         self.genesis_hash = self.hash_str('DISARDDDD DOLLARRRR TO THE MOONNNNNN!🚀')
+        self.genesis_tokens = 99999999999999
         self.genesis_block = {
             'index': 1,
             "timestamp": time.time(),
@@ -16,7 +18,7 @@ class DiscardToken:
                 {
                     'sender': "genesis_wallet",
                     'recipient': "the_kings_wallet",
-                    'amount': 99999999999999,
+                    'amount': self.genesis_tokens,
                 }
             ],
             'previous_hash': self.genesis_hash
@@ -30,7 +32,7 @@ class DiscardToken:
             'recipient': recipient,
             'amount': amount,
         }
-        sender_balance = self.get_wallet_amount(sender)
+        sender_balance = self.get_wallet_balance(sender)
         if sender_balance > amount:
             self.current_trans.append(transaction)
             return
@@ -79,7 +81,7 @@ class DiscardToken:
     def get_chain(self):
         return self.chain
 
-    def get_wallet_amount(self, address):
+    def get_wallet_balance(self, address):
         amount_received = 0
         for block in self.chain:
             for transaction in block['transactions']:
@@ -93,6 +95,31 @@ class DiscardToken:
                     amount_sent += transaction['amount']
         wallet_balance = amount_received - amount_sent
         return wallet_balance
+
+    def get_largest_transaction_amount(self):
+        transaction_amount_lst = self.get_transaction_amount_lst()
+        for block in self.chain:
+            for transaction in block['transactions']:
+                transaction_amount = transaction['amount']
+                if transaction_amount == self.genesis_tokens:
+                    continue
+                transaction_amount_lst.append(transaction_amount)
+        largest_transaction = max(transaction_amount_lst)
+        return largest_transaction
+
+    def get_average_transaction_amount(self):
+        transaction_amount_lst = self.get_transaction_amount_lst()
+        return mean(transaction_amount_lst)
+
+    def get_transaction_amount_lst(self):
+        transaction_amount_lst = []
+        for block in self.chain:
+            for transaction in block['transactions']:
+                transaction_amount = transaction['amount']
+                if transaction_amount == self.genesis_tokens:
+                    continue
+                transaction_amount_lst.append(transaction_amount)
+        return transaction_amount_lst
 
     @staticmethod
     def create_wallet():
@@ -112,8 +139,8 @@ class DiscardToken:
         return block_hash
 
 
-# usage
 '''
+# usage
 # initiate chain
 init_chain = DiscardToken()
 
@@ -122,8 +149,8 @@ wallet = init_chain.create_wallet()
 
 # show original balances
 print('original balances')
-print(init_chain.get_wallet_amount('the_kings_wallet'))
-print(init_chain.get_wallet_amount(wallet))
+print(init_chain.get_wallet_balance('the_kings_wallet'))
+print(init_chain.get_wallet_balance(wallet))
 print('-' * 10)
 
 # send 10 from the kings wallet to wallet address
@@ -131,8 +158,8 @@ print('send 10 from the kings wallet to wallet address')
 init_chain.add_transaction('the_kings_wallet', wallet, 10)
 init_chain.add_block()
 if init_chain.is_chain_valid():
-    print(init_chain.get_wallet_amount('the_kings_wallet'))
-    print(init_chain.get_wallet_amount(wallet))
+    print(init_chain.get_wallet_balance('the_kings_wallet'))
+    print(init_chain.get_wallet_balance(wallet))
 print('-' * 10)
 
 # send 15000 from wallet to the kings wallet, (should throw insufficient funds error)
@@ -140,17 +167,20 @@ print('send 15000 from wallet to the kings wallet, (should throw insufficient fu
 init_chain.add_transaction(wallet, 'the_kings_wallet', 150000)
 init_chain.add_block()
 if init_chain.is_chain_valid():
-    print(init_chain.get_wallet_amount('the_kings_wallet'))
-    print(init_chain.get_wallet_amount(wallet))
+    print(init_chain.get_wallet_balance('the_kings_wallet'))
+    print(init_chain.get_wallet_balance(wallet))
 
 # NOTE: if a user would like to send tokens, they need to be granted tokens from 'the_kings_wallet' first
 
 # create fake transactions, add them to a block, add the block to the chain, validate chain
-number_of_transactions = 5000
-number_of_transactions_per_block = 10
+number_of_transactions = 1000
+number_of_transactions_per_block = 1
 time_start = time.time()
+king_wallet = 'the_kings_wallet'
+starting_amount = init_chain.get_wallet_balance(king_wallet)
 for i in range(number_of_transactions):
-    random_sender = ''.join(random.choices(string.ascii_letters + string.digits, k=random.choice([i for i in range(25, 36)]))) # create 25 char address
+    random_sender = 'the_kings_wallet'
+    #random_sender = ''.join(random.choices(string.ascii_letters + string.digits, k=random.choice([i for i in range(25, 36)]))) # create 25 char address
     random_receiver = ''.join(random.choices(string.ascii_letters + string.digits, k=random.choice([i for i in range(25, 36)]))) # create 25 char address
     random_amount = random.randint(1, 10000)
     init_chain.add_transaction(random_sender, random_receiver, random_amount)
@@ -161,11 +191,16 @@ for i in range(number_of_transactions):
         else:
             print('Chain is invalid')
             break
+end_amount = init_chain.get_wallet_balance(king_wallet)
+amount_sent = starting_amount - end_amount
+print(f'amount sent: {amount_sent}')
 time_end = time.time()
 process_time = time_end - time_start
 print(f'Time to process {number_of_transactions} transactions with {number_of_transactions_per_block} transactions/block; {process_time} seconds')
-
+print(f'Largest transaction: {init_chain.get_largest_transaction_amount()}')
+print(f'Average transaction: {init_chain.get_average_transaction_amount()}')
 if init_chain.is_chain_valid():
     print('All blocks validated')
     pprint.pprint(init_chain.chain[-1])
+    print(init_chain.get_wallet_balance(king_wallet))
 '''
