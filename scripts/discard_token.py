@@ -14,7 +14,7 @@ class DiscardToken:
             "timestamp": time.time(),
             'transactions': [
                 {
-                    'sender': "genes_wallet",
+                    'sender': "genesis_wallet",
                     'recipient': "the_kings_wallet",
                     'amount': 99999999999999,
                 }
