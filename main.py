@@ -15,44 +15,37 @@ from scripts.validate_input import validate_input
 from scripts.get_payout import get_payout
 from scripts.production_score import get_production_score
 from scripts.get_error_msg_str import get_error_msg_str
-from scripts.base_views import home_base_view
 from scripts.base_views import build_options
-from scripts.base_views import static_select_view_push
 from scripts.db import *
 from scripts.mistake import Mistake
+from scripts.views import *
+from scripts.middleware import *
 
 # start Slack app
 app = App(token=os.environ['bot_token'], signing_secret=os.environ['signin_secret'])
 BOT_ID = app.client.auth_test()['user_id']
 
 
-# slack app home modals
-@app.event("app_home_opened")
-def app_home_opened(event, logger):
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@Slack App Modals and Views@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+# ##############################################Home View###############################################################
+@app.event("app_home_opened", middleware=[fetch_user])
+def app_home_root_view(context, logger):
     """
-    Listens to the app_home_opened Events API event to hear when a user opens your app from the sidebarAd
-    :param event: dict, response from Events API when the home tab is opened https://api.slack.com/events/app_home_opened
-    :param logger: console logger
+    Show home buttons
+    :param context:
+    :param logger: logger
     :return: None
     """
-
-    # app home view
-    user = event["user"]
-    view = home_base_view(event)
-    try:
-        result = app.client.views_publish(
-            user_id=user,
-            view=view
-        )
-        logger.info(result)
-    except SlackApiError as e:
-        logger.error(f"Error publishing home tab: {e}")
+    show_home_buttons_view(app, SlackApiError, context, logger)
 
 
-@app.action('score_home_button')
-def score_home_button_click(ack, body, logger):
+# ######################################Productivity Score Calculator Modal#############################################
+@app.action('productivity_score_calculator_button_click')
+def productivity_score_calculator_root_view(ack, body, logger):
     """
     Open production score calculator when "Production Calculator" is clicked
+    :param logger:
     :param ack: slack obj
     :param body: slack obj, https://slack.dev/bolt-python/api-docs/slack_bolt/kwargs_injection/args.html#slack_bolt.kwargs_injection.args.Args.action
     :return: None
@@ -158,6 +151,8 @@ def get_stats_update_calc_score_modal(ack, view, logger):
         print(e)
         logger.info(e)
 
+
+# #########################################Piece Pay Calculator Modal###################################################
 
 def piece_pay_calc_root_view(ack, body, context, logger, view):
     """
@@ -569,6 +564,7 @@ def get_stats_update_calc_piecepay_modal(ack, view, context, payload, body, logg
     piece_pay_calc_root_view(ack, body, context, logger, view)
 
 
+# #########################################Appeal Mistake Modal#########################################################
 @app.action("appeal_mistake_button_click")
 def appeal_mistake_button_click(ack, body, logger):
     """
@@ -780,20 +776,16 @@ def appeal_mistake_modal(ack, view, body):
     ack()
 
 
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@Message Reacts@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @app.message(re.compile("(hi|hello|hey|yo)"))
 def say_hello(message, say):
-    greeting_lst = ['hello', 'hi', 'whats up']
+    greeting_lst = ['hello', 'hi', 'whats up', 'yo']
     greeting = random.choice(greeting_lst)
     user = message['user']
     say(f'{greeting} <@{user}>!✌')
 
 
-@app.event("message")
-def handle_message_events(body, logger):
-    logger.info(body)
-
-
-# slack commands
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@Slash Commands@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @app.command('/bonus')
 def bonus(ack, respond, command):
     """
