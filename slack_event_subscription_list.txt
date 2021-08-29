@@ -1,0 +1,3 @@
+Required event subscriptions
+- app_home_opened
+- message.im
