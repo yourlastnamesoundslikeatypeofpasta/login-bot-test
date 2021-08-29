@@ -1,0 +1,6 @@
+Required OAuth Permissions
+- chat:write
+- commands
+- im:history
+- im:read
+- users:read
