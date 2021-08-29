@@ -5,3 +5,5 @@ mistake_values = {'flex': 0, 'batt min': 0, 'pp': 0, 'packg': 0, 'we': 1, 'de': 
                   'in': 18, 'la': 18, 'wa': 18, 'cm': 22, 'utl': 25}
 
 selected_mistake_codes = []
+
+mistake_points = 0
