@@ -41,115 +41,32 @@ def app_home_root_view(context, logger):
 
 
 # ######################################Productivity Score Calculator Modal#############################################
-@app.action('productivity_score_calculator_button_click')
-def productivity_score_calculator_root_view(ack, body, logger):
+@app.action('productivity_score_calculator_button_click', middleware=[fetch_trigger_id])
+def productivity_score_calculator_root_view(ack, context, logger):
     """
     Open production score calculator when "Production Calculator" is clicked
+    :param context:
     :param logger:
     :param ack: slack obj
     :param body: slack obj, https://slack.dev/bolt-python/api-docs/slack_bolt/kwargs_injection/args.html#slack_bolt.kwargs_injection.args.Args.action
     :return: None
     """
     ack()
-    trigger_id = body['trigger_id']
-    try:
-        # open score input field view
-        app.client.views_open(
-            trigger_id=trigger_id,
-            view=production_calc_base_view
-        )
-    except SlackApiError as e:
-        logger.info(f'Error creating view: {e}')
+    show_productivity_calc_view(app, SlackApiError, context, logger)
 
 
-@app.view("calc_score_modal")
-def get_stats_update_calc_score_modal(ack, view, logger):
+@app.view("productivity_score_calculator_view_submission", middleware=[calculate_production_score])
+def productivity_score_calculator_update_root_view(ack, context, logger):
     """
     Updated production score calculator modal.
+    :param context:
     :param logger: logger obj
     :param ack: slack obj
     :param view: slack obj
     :return: None
     """
     ack()
-    block_values = {
-        "block_package": view['state']['values']['block_package']['package_input']['value'].strip(' '),
-        "block_weight": view['state']['values']['block_weight']['weight_input']['value'].strip(' '),
-        "block_items": view['state']['values']['block_items']['item_input']['value'].strip(' '),
-        "block_hours": view['state']['values']['block_hours']['hour_input']['value'].strip(' ')
-    }
-    error_response_action = validate_input(block_values)
-    if error_response_action:
-        ack(error_response_action)
-        return
-    try:
-        package_count = float(block_values['block_package'])
-        weight_count = float(block_values['block_weight'])
-        item_count = float(block_values['block_items'])
-        hour_count = float(block_values['block_hours'])
-        pkg_per_hour = package_count / hour_count
-        weight_per_package = weight_count / package_count
-        items_per_pkg = item_count / package_count
-        production_score = get_production_score(package_count, weight_count, item_count, hour_count)
-
-        view_update_blocks = [
-            {
-                "type": "section",
-                "fields": [
-                    {
-                        "type": "mrkdwn",
-                        "text": f"*Packages* :package:: `{package_count:.2f}`"
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": f"*Weight* :weight_lifter:: `{weight_count:.2f}`"
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": f"*Items* :shopping_trolley:: `{item_count:.2f}`"
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": f"*Hours* :clock1:: `{hour_count:.2f}`"
-                    },
-                ],
-            },
-            {
-                "type": "divider"
-            },
-            {
-                "type": "section",
-                "fields": [
-                    {
-                        "type": "mrkdwn",
-                        "text": f"*Packages/Hour*: `{pkg_per_hour:.2f}`"
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": f"*Weight/Package*: `{weight_per_package:.2f}`"
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": f"*Items/Package*: `{items_per_pkg:.2f}`"
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": f"*Productivity Score:* `{production_score:.2f}` :dash:"
-                    },
-                ]
-            }
-        ]
-        view_update = deepcopy(production_calc_base_view)
-        for block in view_update_blocks:
-            view_update['blocks'].append(block)
-
-        ack({
-            "response_action": "update",
-            "view": view_update
-        })
-    except (SlackApiError, ValueError) as e:
-        print(e)
-        logger.info(e)
+    show_productivity_calc_view(app, SlackApiError, context, logger, ack=ack)
 
 
 # #########################################Piece Pay Calculator Modal###################################################
