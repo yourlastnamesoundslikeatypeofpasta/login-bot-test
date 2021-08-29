@@ -1,4 +1,4 @@
-from scripts.values import mistake_values
+from scripts.initial_values import mistake_values
 
 
 def build_options(mistake_dict):
@@ -7,7 +7,7 @@ def build_options(mistake_dict):
         options_lst.append({
             "text": {
                 "type": "plain_text",
-                "text": f"{mistake_code.upper()}"
+                "text": f"{mistake_code.upper()} ({point_value} points)"
             },
             "value": f"{mistake_code}"
         }
