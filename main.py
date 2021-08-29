@@ -338,7 +338,39 @@ def piece_pay_calc_root_view(ack, body, context, logger, view):
     }
     # TODO: Add blocks to separate dir, and files
     try:
-        if context['calculate']:
+        if context['calculate'] and mistake_points:
+            score_blocks = {
+                "type": "section",
+                "fields": [
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Packages* :package:: `{context['package_count']:.2f}`"
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Weight* :weight_lifter:: `{context['weight_count']:.2f}`"
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Items* :shopping_trolley:: `{context['item_count']:.2f}`"
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Tier* {context['tier_emoji']}: `{context['tier']}`"
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Payout:moneybag::* `{context['payout']:.2f}`"
+                    },
+                ],
+            }
+            piece_pay_calc_base_view['blocks'].append(clear_mistake_block)
+            piece_pay_calc_base_view['blocks'].append(score_blocks)
+            ack({
+                "response_action": "update",
+                "view": piece_pay_calc_base_view
+            })
+        elif context['calculate']:
             score_blocks = {
                 "type": "section",
                 "fields": [
