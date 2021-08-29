@@ -1,9 +1,10 @@
-from scripts.values import mistake_values
+from scripts.initial_values import mistake_values
 
 
-def get_payout(package_count, weight_count, item_count, tier, body):
+def get_payout(package_count, weight_count, item_count, tier, mistake_points=None):
     """
     Calculate logger dollar payout
+    :param mistake_points:
     :param package_count: float, packages
     :param weight_count: float, weight
     :param item_count: float, items
@@ -47,35 +48,26 @@ def get_payout(package_count, weight_count, item_count, tier, body):
     item_value = tier_value_dict[tier]['items']
     payout_value = (package_value * package_count) + (weight_value * weight_count) + (item_value * item_count)
 
-    try:
-        selected_option_values = body['view']['state']['values']['block_mistakes']['mistake_selections'][
-            'selected_options']
-    except KeyError:
-        return payout_value
-
-    mistake_points = 0
-    for option_value in selected_option_values:
-        mistake_points += mistake_values.get(option_value['value'])
-
     # get deduction dollar value
     deduction = 0
-    if mistake_points <= 2:
-        deduction = 0
-    elif 3 <= mistake_points <= 6:
-        deduction = 50
-    elif 7 <= mistake_points <= 9:
-        deduction = 100
-    elif 10 <= mistake_points <= 13:
-        deduction = 150
-    elif 14 <= mistake_points <= 17:
-        deduction = 200
-    elif 18 <= mistake_points <= 21:
-        deduction = 250
-    elif 22 <= mistake_points <= 29:
-        deduction = 300
-    else:
-        payout_value = 0
-        return payout_value
+    if mistake_points:
+        if mistake_points <= 2:
+            deduction = 0
+        elif 3 <= mistake_points <= 6:
+            deduction = 50
+        elif 7 <= mistake_points <= 9:
+            deduction = 100
+        elif 10 <= mistake_points <= 13:
+            deduction = 150
+        elif 14 <= mistake_points <= 17:
+            deduction = 200
+        elif 18 <= mistake_points <= 21:
+            deduction = 250
+        elif 22 <= mistake_points <= 29:
+            deduction = 300
+        else:
+            payout_value = 0
+            return payout_value
 
     payout_value -= deduction
 
