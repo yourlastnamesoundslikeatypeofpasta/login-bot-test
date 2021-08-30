@@ -401,17 +401,46 @@ def handle(ack, body, event, logger):
 
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@Send Mistake Reports Listeners@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@app.event('file_shared', middleware=[download_file_shared])
-def download_file_shared(ack, body, context, logger):
+@app.event('file_shared')
+def acknowledge_file_shared(ack, body, context, logger):
     ack()
-    #pprint(body)
 
 
 # acknowledge file_shared subtype
-@app.event('message', matchers=[lambda message: message.get('subtype') != 'file_shared'])
-def acknowledge_file_shared(ack, event, logger):
+@app.event('message',
+           matchers=[lambda message: message.get('subtype') != 'file_shared'],
+           middleware=[download_file_shared, parse_file_download])
+def acknowledge_file_shared(ack, event, context, logger):
     ack()
-    #pprint(event)
+    channel = event['channel']
+    user = event['user']
+    blocks = [
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "⚠Prototype: Please send mistakes to yourself⚠\nFinal version will send mistakes to individuals"
+            },
+            "accessory": {
+                "type": "users_select",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Select a user",
+                },
+                "action_id": "users_select-action"
+            }
+        }
+    ]
+    if user != BOT_ID:
+        app.client.chat_postMessage(channel=channel,
+                                    blocks=blocks)
+
+
+@app.action('users_select-action')
+def send_mistakes(ack, context, respond, logger):
+    respond('Sending Mistakes...')
+    pprint(context)
+    send_mistakes_view(app, SlackApiError, context, logger)
 
 
 # acknowledge file created
