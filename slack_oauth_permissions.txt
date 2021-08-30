@@ -1,6 +1,9 @@
 Required OAuth Permissions
+- app_mentions:read
 - chat:write
 - commands
+- files:read
 - im:history
 - im:read
+remote_files:read
 - users:read
