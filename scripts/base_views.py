@@ -1,18 +1,4 @@
-from scripts.initial_values import mistake_values
-
-
-def build_options(mistake_dict):
-    options_lst = []
-    for mistake_code, point_value in mistake_dict.items():
-        options_lst.append({
-            "text": {
-                "type": "plain_text",
-                "text": f"{mistake_code.upper()} ({point_value} points)"
-            },
-            "value": f"{mistake_code}"
-        }
-        )
-    return options_lst
+from scripts.fetch_options import fetch_options
 
 
 def home_base_view(event):
@@ -96,7 +82,7 @@ def home_base_view(event):
     return view
 
 
-options = build_options(mistake_values)
+options = fetch_options()
 
 production_calc_base_view = {
     "type": "modal",
@@ -367,4 +353,3 @@ static_select_view_push = {
         }
     ]
 }
-
