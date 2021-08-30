@@ -1,4 +1,3 @@
-from scripts.initial_values import mistake_values
 
 
 def get_payout(package_count, weight_count, item_count, tier, mistake_points=None):
