@@ -11,7 +11,6 @@ from scripts.command_score import bonus_score
 from scripts.command_score import find_stats
 from scripts.get_payout import get_payout
 from scripts.get_error_msg_str import get_error_msg_str
-from scripts.db import *
 from scripts.views import *
 from scripts.middleware import *
 
@@ -394,10 +393,31 @@ def say_hello(message, say):
     say(f'{greeting} <@{user}>!✌')
 
 
-@app.event("message")
-def handle(ack, body, logger):
+# this event will ignore file_shared subtype
+@app.event("message",
+           matchers=[lambda message: message.get('subtype') == 'file_shared'])
+def handle(ack, body, event, logger):
     ack()
-    print(body)
+
+
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@Send Mistake Reports Listeners@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@app.event('file_shared', middleware=[download_file_shared])
+def download_file_shared(ack, body, context, logger):
+    ack()
+    #pprint(body)
+
+
+# acknowledge file_shared subtype
+@app.event('message', matchers=[lambda message: message.get('subtype') != 'file_shared'])
+def acknowledge_file_shared(ack, event, logger):
+    ack()
+    #pprint(event)
+
+
+# acknowledge file created
+@app.event("file_created")
+def acknowledge_file_created(ack, event, logger):
+    ack()
 
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@Slash Commands@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
