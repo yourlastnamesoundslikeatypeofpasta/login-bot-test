@@ -1,5 +1,9 @@
+import logging
+
 from scripts.production_score import get_production_score
 from scripts.validate_input import validate_input
+from scripts.mistakes import Mistakes
+from pprint import pprint
 
 
 def fetch_user(payload, context, next):
@@ -11,6 +15,25 @@ def fetch_user(payload, context, next):
 def fetch_trigger_id(body, context, next):
     trigger_id = body['trigger_id']
     context['trigger_id'] = trigger_id
+    next()
+
+
+def check_if_input_empty(body, context, next):
+    values_lst = []
+    package_input = body['view']['state']['values']['block_package']['package_input']['value']
+    item_input = body['view']['state']['values']['block_items']['item_input']['value']
+    weight_input = body['view']['state']['values']['block_weight']['weight_input']['value']
+    tier_input = body['view']['state']['values']['block_tier']['static_tier_selected_do_nothing_please'][
+        'selected_option']
+    values_lst.append(package_input)
+    values_lst.append(item_input)
+    values_lst.append(weight_input)
+    values_lst.append(tier_input)
+    for value in values_lst:
+        if value is None:
+            context['private_metadata'] = 'True'
+            next()
+            return
     next()
 
 
@@ -43,4 +66,33 @@ def calculate_production_score(view, context, next):
                                                        context['weight_count'],
                                                        context['item_count'],
                                                        context['hour_count'])
+    next()
+
+
+def fetch_mistake_points(body, context, next):
+    are_inputs_empty = body['view']['private_metadata']
+    mistake_code = \
+        body['view']['state']['values']['block_mistake_static_select']['action_static_mistake']['selected_option'][
+            'value']
+
+    context['root_view_id'] = body['view']['root_view_id']
+    # check if a Mistakes instance exists
+    if are_inputs_empty:  # todo: mistakes are not disappearing when modal is closed and reopened
+        # create one
+        mistakes = Mistakes()
+        mistakes.add_mistake(mistake_code)
+        context['mistake_points'] = mistakes.get_mistake_points()
+        pprint(Mistakes.instances)
+        next()
+        return
+    else:
+        # use the last instance
+        mistakes = Mistakes.instances[-1]
+    mistakes.add_mistake(mistake_code)
+    context['mistake_points'] = mistakes.get_mistake_points()
+    next()
+
+
+def fetch_root_id(body, context, next):
+    context['root_view_id'] = body['view']['root_view_id']
     next()
