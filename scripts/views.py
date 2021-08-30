@@ -580,3 +580,122 @@ def mistake_selection_view(app, slackapierror, context, logger, ack=None):
         )
     except slackapierror as e:
         logger.error(e)
+
+
+def send_mistakes_view(app, slackapierror, context, logger, ack=None):
+    if 'employee_mistake_dict' in context:
+        # build mistake section blocks and add approve/deny buttons
+        for mistake_report in context['employee_mistake_dict']:
+            mistake_block = {
+                "blocks": [
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": f"*{mistake_report['employee_name']} Mistake Report:*"
+                        }
+                    }
+                ]
+            }
+            for mistake in mistake_report['employee_mistakes']:
+                section_with_mistakes_block = {
+                    "type": "section",
+                    "fields": [
+                        {
+                            "type": "mrkdwn",
+                            "text": f"*Entered Date:*\n{mistake['entered_dated']}"
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": f"*Incident Date:*\n{mistake['incident_date']}"
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": f"*Mistake Type:*\n{mistake['mistake_type']}"
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": f"*Suite:*\n{mistake['suite']}"
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": f"*Package ID:*\n{mistake['pkg_id']}"
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": f"*Incident Notes:*\n{mistake['incident_notes']}"
+                        }
+                    ]
+                }
+                mistake_block['blocks'].append(section_with_mistakes_block)
+            # add approve/deny buttons
+            approve_deny_button_block = {
+                "type": "actions",
+                "elements": [
+                    {
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Approve"
+                        },
+                        "style": "primary",
+                        "value": "click_me_123"
+                    },
+                    {
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Deny"
+                        },
+                        "style": "danger",
+                        "value": "click_me_123"
+                    }
+                ]
+            }
+            mistake_block['blocks'].append(approve_deny_button_block)
+        app.client.conversations.open(
+            channel=context['channel_id']
+        )
+    else:
+        blocks = [
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "⚠Prototype: Please send mistakes to yourself⚠\nFinal version will send mistakes to individuals"
+                        },
+                        "accessory": {
+                            "type": "users_select",
+                            "placeholder": {
+                                "type": "plain_text",
+                                "text": "Select a user",
+                            },
+                            "action_id": "users_select-action"
+                        }
+                    }
+                ]
+        view = {
+            {
+                "type": "modal",
+                "callback_id": "user_to_send_mistakes_to_selected",
+                "title": {
+                    "type": "plain_text",
+                    "text": "Send Mistakes",
+                },
+                "submit": {
+                    "type": "plain_text",
+                    "text": "Submit",
+                },
+                "type": "modal",
+                "close": {
+                    "type": "plain_text",
+                    "text": "Cancel",
+                },
+                "blocks": blocks
+            }
+        }
+        trigger_id = context['trigger_id']
+        app.client.views_open(
+            trigger_id=trigger_id,
+            view=view
+        )
