@@ -4,20 +4,14 @@ from pprint import pprint
 import re
 import random
 
-from copy import deepcopy
 from slack_bolt import App
 from slack_sdk.errors import SlackApiError
 
 from scripts.command_score import bonus_score
 from scripts.command_score import find_stats
-from scripts.base_views import production_calc_base_view
-from scripts.validate_input import validate_input
 from scripts.get_payout import get_payout
-from scripts.production_score import get_production_score
 from scripts.get_error_msg_str import get_error_msg_str
-from scripts.base_views import build_options
 from scripts.db import *
-from scripts.mistake import Mistake
 from scripts.views import *
 from scripts.middleware import *
 
@@ -41,6 +35,7 @@ def app_home_root_view(context, logger):
 
 
 # ######################################Productivity Score Calculator Modal#############################################
+# root view
 @app.action('productivity_score_calculator_button_click', middleware=[fetch_trigger_id])
 def productivity_score_calculator_root_view(ack, context, logger):
     """
@@ -55,6 +50,7 @@ def productivity_score_calculator_root_view(ack, context, logger):
     show_productivity_calc_view(app, SlackApiError, context, logger)
 
 
+# updated view
 @app.view("productivity_score_calculator_view_submission", middleware=[calculate_production_score])
 def productivity_score_calculator_update_root_view(ack, context, logger):
     """
@@ -70,348 +66,44 @@ def productivity_score_calculator_update_root_view(ack, context, logger):
 
 
 # #########################################Piece Pay Calculator Modal###################################################
-
-def piece_pay_calc_root_view(ack, body, context, logger, view):
+# root view
+@app.action("piece_pay_home_button", middleware=[fetch_trigger_id, fetch_root_id])
+def piece_pay_calc_root_view(ack, context, logger):
     """
     Open piece pay calculator when "Piece Pay Calculator" is clicked
-    :param mistake:
-    :param ack: slack obj
-    :param body: slack obj
-    :param logger: slack obj
-    :return: None
-    """
-    # Set mistake value
-    trigger_id = body['trigger_id']
-    mistake_points = context['mistake_points']
-    piece_pay_calc_base_view = {
-        "type": "modal",
-        "callback_id": "calc_piecepay_modal",
-        "title": {
-            "type": "plain_text",
-            "text": "Piece Pay Calculator"
-        },
-        "submit": {
-            "type": "plain_text",
-            "text": "Calculate"
-        },
-        "clear_on_close": True,
-        "blocks": [
-            {
-                "type": "input",
-                "block_id": "block_package",
-                "element": {
-                    "type": "plain_text_input",
-                    "action_id": "package_input",
-                    "placeholder": {
-                        "type": "plain_text",
-                        "text": "300"
-                    }
-                },
-                "label": {
-                    "type": "plain_text",
-                    "text": "Packages"
-                }
-            },
-            {
-                "type": "input",
-                "block_id": "block_weight",
-                "element": {
-                    "type": "plain_text_input",
-                    "action_id": "weight_input",
-                    "placeholder": {
-                        "type": "plain_text",
-                        "text": "750"
-                    }
-                },
-                "label": {
-                    "type": "plain_text",
-                    "text": "Weight"
-                }
-            },
-            {
-                "type": "input",
-                "block_id": "block_items",
-                "element": {
-                    "type": "plain_text_input",
-                    "action_id": "item_input",
-                    "placeholder": {
-                        "type": "plain_text",
-                        "text": "450"
-                    }
-                },
-                "label": {
-                    "type": "plain_text",
-                    "text": "Items"
-                }
-            },
-            {
-                "type": "input",
-                "block_id": "block_tier",
-                "element": {
-                    "type": "static_select",
-                    "placeholder": {
-                        "type": "plain_text",
-                        "text": "Select a tier...",
-                        "emoji": True
-                    },
-                    "options": [
-                        {
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Tier 1",
-                                "emoji": True
-                            },
-                            "value": "tier_1"
-                        },
-                        {
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Tier 2",
-                                "emoji": True
-                            },
-                            "value": "tier_2"
-                        },
-                        {
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Tier 3",
-                                "emoji": True
-                            },
-                            "value": "tier_3"
-                        },
-                        {
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Personal Shopper",
-                                "emoji": True
-                            },
-                            "value": "personal_shopper"
-                        },
-                        {
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Special Handling",
-                                "emoji": True
-                            },
-                            "value": "special_handling"
-                        },
-                        {
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Heavies",
-                                "emoji": True
-                            },
-                            "value": "heavies"
-                        }
-                    ],
-                    "action_id": "static_select-action"
-                },
-                "label": {
-                    "type": "plain_text",
-                    "text": "Tier",
-                    "emoji": True
-                }
-            },
-            {
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": f"Mistake Points _(optional)_: {mistake_points}"
-                },
-                "accessory": {
-                    "type": "button",
-                    "action_id": "add_mistakes_button_click",
-                    "text": {
-                        "type": "plain_text",
-                        "text": "Add Mistake",
-                    },
-                    "style": "danger"
-                }
-            }
-
-        ],
-    }
-    clear_mistake_block = {
-        "block_id": "block_clear_mistake_button",
-        "type": "section",
-        "text": {
-            "type": "mrkdwn",
-            "text": " "
-        },
-        "accessory": {
-            "type": "button",
-            "text": {
-                "type": "plain_text",
-                "text": "Clear Mistakes",
-                "emoji": True
-            },
-            "action_id": "clear_mistakes",
-        }
-    }
-    # TODO: Add blocks to separate dir, and files
-    try:
-        if context['calculate'] and mistake_points:
-            score_blocks = {
-                "type": "section",
-                "fields": [
-                    {
-                        "type": "mrkdwn",
-                        "text": f"*Packages* :package:: `{context['package_count']:.2f}`"
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": f"*Weight* :weight_lifter:: `{context['weight_count']:.2f}`"
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": f"*Items* :shopping_trolley:: `{context['item_count']:.2f}`"
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": f"*Tier* {context['tier_emoji']}: `{context['tier']}`"
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": f"*Payout:moneybag::* `{context['payout']:.2f}`"
-                    },
-                ],
-            }
-            piece_pay_calc_base_view['blocks'].append(clear_mistake_block)
-            piece_pay_calc_base_view['blocks'].append(score_blocks)
-            ack({
-                "response_action": "update",
-                "view": piece_pay_calc_base_view
-            })
-        elif context['calculate']:
-            score_blocks = {
-                "type": "section",
-                "fields": [
-                    {
-                        "type": "mrkdwn",
-                        "text": f"*Packages* :package:: `{context['package_count']:.2f}`"
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": f"*Weight* :weight_lifter:: `{context['weight_count']:.2f}`"
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": f"*Items* :shopping_trolley:: `{context['item_count']:.2f}`"
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": f"*Tier* {context['tier_emoji']}: `{context['tier']}`"
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": f"*Payout:moneybag::* `{context['payout']:.2f}`"
-                    },
-                ],
-            }
-            piece_pay_calc_base_view['blocks'].append(score_blocks)
-            ack({
-                "response_action": "update",
-                "view": piece_pay_calc_base_view
-            })
-        elif context['mistakes_cleared']:
-            app.client.views_update(
-                view_id=body['view']['root_view_id'],
-                view=piece_pay_calc_base_view,
-            )
-        elif mistake_points:
-            piece_pay_calc_base_view['blocks'].append(clear_mistake_block)
-            app.client.views_update(
-                view_id=body['view']['root_view_id'],
-                view=piece_pay_calc_base_view,
-            )
-        else:
-            app.client.views_open(
-                trigger_id=trigger_id,
-                view=piece_pay_calc_base_view,
-            )
-    except SlackApiError as e:
-        logger.info(f'Error creating view: {e}')
-
-
-@app.action("piece_pay_home_button")
-def piece_pay_calc(ack, body, context, logger, view):
-    """
-    Open piece pay calculator when "Piece Pay Calculator" is clicked
+    :param view:
+    :param context:
     :param ack: slack obj
     :param body: slack obj
     :param logger: slack obj
     :return: None
     """
     ack()
-    piece_pay_calc.mistake = Mistake()
-    context['mistakes_cleared'] = False
-    context['calculate'] = False
-    context['mistake_points'] = 0
-    piece_pay_calc_root_view(ack, body, context, logger, view)
+    piece_pay_calc_view(app, SlackApiError, context, logger)
 
 
-@app.action('add_mistakes_button_click')
-def open_mistake_view(ack, body, context):
+# tier menu select action
+# tier menu select requires a 200 response when an item is selected. idk y this is required
+@app.action("static_tier_selected_do_nothing_please")
+def shout_200_to_the_slack_gods(ack):
     ack()
-    context['mistakes_cleared'] = False
-    context['calculate'] = False
-    trigger_id = body['trigger_id']
-    blocks = [{
-        "type": "input",
-        "block_id": "block_mistake_static_select",
-        "label": {
-            "type": "plain_text",
-            "text": "Select Mistake",
-        },
-        "element": {
-            "type": "static_select",
-            "placeholder": {
-                "type": "plain_text",
-                "text": "Select Mistake..."
-            },
-            "action_id": "action_static_mistake",
-            "options": build_options(mistake_values)
-        }
-    }]
-    try:
-        app.client.views_push(
-            trigger_id=trigger_id,
-            view={
-                "type": "modal",
-                "callback_id": "piece_pay_home_button_click",
-                "title": {
-                    "type": "plain_text",
-                    "text": "Select Mistakes"
-                },
-                "submit": {
-                    "type": "plain_text",
-                    "text": "Add Mistakes",
-                },
-                "close": {
-                    "type": "plain_text",
-                    "text": "Close",
-                },
-                "blocks": blocks
-            },
-        )
-    except SlackApiError as e:
-        print(e.response)
 
 
-@app.view('piece_pay_home_button_click')
-def open_piece_pay_view_with_mistakes(ack, body, context, payload, logger, view):
+# mistake selection view
+@app.action('add_mistakes_button_click', middleware=[fetch_trigger_id, check_if_input_empty])
+def open_mistake_view(ack, body, context, logger):
     ack()
-    mistake = piece_pay_calc.mistake
-    context['calculate'] = False
-    context['mistakes_cleared'] = False
-    mistake_code = \
-        payload['state']['values']['block_mistake_static_select']['action_static_mistake']['selected_option'][
-            'value']
-    mistake.add_mistake(mistake_code)
-    context['mistake_points'] = mistake.get_mistake_points()
-    return piece_pay_calc_root_view(ack, body, context, logger, view)
+    mistake_selection_view(app, SlackApiError, context, logger)
 
 
+# update root view with mistake submission from mistake selection view
+@app.view('root_view_plus_mistake_points_view', middleware=[fetch_trigger_id, fetch_mistake_points])
+def root_with_mistakes_view(ack, body, context, logger):
+    ack()
+    piece_pay_calc_view(app, body, context, logger, ack=ack)
+
+
+# update root view mistake point label
 @app.action("clear_mistakes")
 def clear_mistake_points_from_root_view(ack, body, context, logger, view, payload):
     ack()
@@ -419,7 +111,7 @@ def clear_mistake_points_from_root_view(ack, body, context, logger, view, payloa
     context['mistake_points'] = piece_pay_calc.mistake.get_mistake_points()
     context['mistakes_cleared'] = True
     context['calculate'] = False
-    piece_pay_calc_root_view(ack, body, context, logger, view)
+    piece_pay_calc_view(ack, body, context, logger, view)
 
 
 @app.view("calc_piecepay_modal")
@@ -478,7 +170,7 @@ def get_stats_update_calc_piecepay_modal(ack, view, context, payload, body, logg
     else:
         context['tier_emoji'] = ''
 
-    piece_pay_calc_root_view(ack, body, context, logger, view)
+    piece_pay_calc_view(ack, body, context, logger, view)
 
 
 # #########################################Appeal Mistake Modal#########################################################
@@ -700,6 +392,12 @@ def say_hello(message, say):
     greeting = random.choice(greeting_lst)
     user = message['user']
     say(f'{greeting} <@{user}>!✌')
+
+
+@app.event("message")
+def handle(ack, body, logger):
+    ack()
+    print(body)
 
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@Slash Commands@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
