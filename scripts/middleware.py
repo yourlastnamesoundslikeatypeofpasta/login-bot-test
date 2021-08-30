@@ -2,6 +2,7 @@ import logging
 import os
 
 import requests
+import openpyxl
 
 from scripts.production_score import get_production_score
 from scripts.validate_input import validate_input
@@ -15,7 +16,8 @@ def fetch_user(payload, context, next):
     next()
 
 
-def fetch_trigger_id(body, context, next):
+def fetch_trigger_id(body, context, event, next):
+    pprint(event)
     trigger_id = body['trigger_id']
     context['trigger_id'] = trigger_id
     next()
@@ -101,13 +103,13 @@ def fetch_root_id(body, context, next):
     next()
 
 
-def download_file_shared(body, context, next, logger):
+def download_file_shared(body, context, event, next, logger):
     # import is here because if added at the top, it breaks other middleware funcs, not sure why
     # todo: find out why import app from main breaks other funcs
     from main import app
 
     # get file info
-    file_id = body['event']['file_id']
+    file_id = body['event']['files'][0]['id']
     info = app.client.files_info(file=file_id)
     file_name = info['file']['name']
     file_download_link = info['file']['url_private_download']
@@ -122,4 +124,85 @@ def download_file_shared(body, context, next, logger):
     with open(file_download_path, 'wb') as f:
         for chunk in r.iter_content():
             f.write(chunk)
+    context['file_download_path'] = file_download_path
+    next()
+
+
+def parse_file_download(body, context, next, logger):
+    file_download_path = context['file_download_path']
+    # open workbook and assign sheets
+    mistake_report_file = file_download_path
+
+    mistake_report_workbook = openpyxl.load_workbook(mistake_report_file)
+
+    mistake_report_workbook_names = mistake_report_workbook.sheetnames
+    sheet1, sheet2 = mistake_report_workbook[mistake_report_workbook_names[0]], mistake_report_workbook[
+        mistake_report_workbook_names[1]]
+
+    # close wb, values saved in sheet[number]
+    mistake_report_workbook.close()
+
+    # collects a list of the name on the mistake report, will find out how to perform code block via .max_row method
+    num_rows_mistake_names = 0
+    for i in range(0, 1048576):  # calculates how many rows of data in column 1
+        logger = sheet2.cell(row=i + 3, column=1).value  # goes through each cell in column 1
+        if logger is not None:  # todo: fix this old crap code
+            num_rows_mistake_names += 1
+            continue
+        break
+
+    # creates a sorted(set()) list of logger names that have mistakes, located in {loggerName}sheet (A**x T***a)
+    mistake_names = sorted((list(set([sheet2.cell(row=i + 3, column=1).value for i in range(num_rows_mistake_names)]))))
+
+    # checks to see if any loggers with a channel have a mistake
+    # paper counts how many pieces of paper were saved
+    employee_mistake_lst = []
+    paper = 0
+    for employee in mistake_names:
+        # find mistakes employee made
+        mistake_type = [sheet2.cell(row=i + 3, column=4).value  # list of mistakes associated with employee
+                    for i in range(num_rows_mistake_names)
+                    if sheet2.cell(row=i + 3, column=1).value == employee]
+
+        incident_date = [sheet2.cell(row=i + 3, column=3).value  # list of incident dates associated with employee
+                         for i in range(num_rows_mistake_names)
+                         if sheet2.cell(row=i + 3, column=1).value == employee]
+
+        entered_date = [sheet2.cell(row=i + 3, column=2).value  # list of entered dates associated with employee
+                        for i in range(num_rows_mistake_names)
+                        if sheet2.cell(row=i + 3, column=1).value == employee]
+
+        suite = [sheet2.cell(row=i + 3, column=5).value  # list of suites associated with employee
+                 for i in range(num_rows_mistake_names)
+                 if sheet2.cell(row=i + 3, column=1).value == employee]
+
+        pkg_id = [sheet2.cell(row=i + 3, column=6).value  # list of pkg ids associated with employee
+                  for i in range(num_rows_mistake_names)
+                  if sheet2.cell(row=i + 3, column=1).value == employee]
+
+        incident_notes = [sheet2.cell(row=i + 3, column=8).value  # list of incident notes associated with employee
+                          for i in range(num_rows_mistake_names)
+                          if sheet2.cell(row=i + 3, column=1).value == employee]
+
+        mistake_lst_zipped = list(zip(entered_date, incident_date, mistake_type, suite, pkg_id, incident_notes))
+        mistake_lst = []
+        for mistake in mistake_lst_zipped:
+            employee_mistake_dict = {
+                "entered_date":  mistake[0],
+                "incident_date": mistake[1],
+                "mistake_type": mistake[2],
+                "suite": mistake[3],
+                "pkg_id": mistake[4],
+                "incident_notes": mistake[5]
+            }
+            mistake_lst.append(employee_mistake_dict)
+
+        employee_dict = {
+            "employee_name": employee,
+            "employee_mistakes": mistake_lst
+        }
+        employee_mistake_lst.append(employee_dict)
+        paper += 1
+    context['paper'] = paper
+    context['employee_mistake_dict'] = employee_mistake_lst
     next()
