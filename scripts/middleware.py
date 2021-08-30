@@ -1,4 +1,7 @@
 import logging
+import os
+
+import requests
 
 from scripts.production_score import get_production_score
 from scripts.validate_input import validate_input
@@ -95,4 +98,28 @@ def fetch_mistake_points(body, context, next):
 
 def fetch_root_id(body, context, next):
     context['root_view_id'] = body['view']['root_view_id']
+    next()
+
+
+def download_file_shared(body, context, next, logger):
+    # import is here because if added at the top, it breaks other middleware funcs, not sure why
+    # todo: find out why import app from main breaks other funcs
+    from main import app
+
+    # get file info
+    file_id = body['event']['file_id']
+    info = app.client.files_info(file=file_id)
+    file_name = info['file']['name']
+    file_download_link = info['file']['url_private_download']
+
+    # download file to path
+    token = os.environ['bot_token']
+    headers = {
+        'Authorization': f"Bearer {token}"
+    }  # token in headers is needed to download private files from the workspace
+    r = requests.get(url=file_download_link, headers=headers)
+    file_download_path = os.path.join('resources', 'downloads', file_name)
+    with open(file_download_path, 'wb') as f:
+        for chunk in r.iter_content():
+            f.write(chunk)
     next()
