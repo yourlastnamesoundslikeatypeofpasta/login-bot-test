@@ -1,5 +1,6 @@
 import logging
 import os
+import datetime
 
 import requests
 import openpyxl
@@ -7,6 +8,7 @@ import openpyxl
 from scripts.production_score import get_production_score
 from scripts.validate_input import validate_input
 from scripts.mistakes import Mistakes
+from scripts.send_mistake_report import MistakeReport
 from pprint import pprint
 
 
@@ -17,7 +19,6 @@ def fetch_user(payload, context, next):
 
 
 def fetch_trigger_id(body, context, event, next):
-    pprint(event)
     trigger_id = body['trigger_id']
     context['trigger_id'] = trigger_id
     next()
@@ -124,12 +125,14 @@ def download_file_shared(body, context, event, next, logger):
     with open(file_download_path, 'wb') as f:
         for chunk in r.iter_content():
             f.write(chunk)
-    context['file_download_path'] = file_download_path
+    mistakes = MistakeReport(file_download_path)
     next()
 
 
 def parse_file_download(body, context, next, logger):
-    file_download_path = context['file_download_path']
+    mistake_report = MistakeReport.instances[-1]
+
+    file_download_path = mistake_report.file_download_path
     # open workbook and assign sheets
     mistake_report_file = file_download_path
 
@@ -161,8 +164,8 @@ def parse_file_download(body, context, next, logger):
     for employee in mistake_names:
         # find mistakes employee made
         mistake_type = [sheet2.cell(row=i + 3, column=4).value  # list of mistakes associated with employee
-                    for i in range(num_rows_mistake_names)
-                    if sheet2.cell(row=i + 3, column=1).value == employee]
+                        for i in range(num_rows_mistake_names)
+                        if sheet2.cell(row=i + 3, column=1).value == employee]
 
         incident_date = [sheet2.cell(row=i + 3, column=3).value  # list of incident dates associated with employee
                          for i in range(num_rows_mistake_names)
@@ -184,11 +187,22 @@ def parse_file_download(body, context, next, logger):
                           for i in range(num_rows_mistake_names)
                           if sheet2.cell(row=i + 3, column=1).value == employee]
 
-        mistake_lst_zipped = list(zip(entered_date, incident_date, mistake_type, suite, pkg_id, incident_notes))
+        formatted_incident_date_lst = []
+        formatted_entered_date_lst = []
+        # format dates
+        for date in incident_date:
+            formatted_date = date.strftime('%m/%d/%y')
+            formatted_incident_date_lst.append(formatted_date)
+        for date in entered_date:
+            formatted_date = date.strftime('%m/%d/%y')
+            formatted_entered_date_lst.append(formatted_date)
+
+        mistake_lst_zipped = list(zip(formatted_entered_date_lst, formatted_incident_date_lst,
+                                      mistake_type, suite, pkg_id, incident_notes))
         mistake_lst = []
         for mistake in mistake_lst_zipped:
             employee_mistake_dict = {
-                "entered_date":  mistake[0],
+                "entered_date": mistake[0],
                 "incident_date": mistake[1],
                 "mistake_type": mistake[2],
                 "suite": mistake[3],

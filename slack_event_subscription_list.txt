@@ -2,6 +2,6 @@ Required event subscriptions
 - app_home_opened
 - app_mention
 - file_created
--file_public
+- file_public
 - file_shared
 - message.im

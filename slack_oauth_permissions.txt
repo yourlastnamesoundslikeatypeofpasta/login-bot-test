@@ -1,9 +1,16 @@
-Required OAuth Permissions
+Required Scopes
+Bot Permissions:
 - app_mentions:read
 - chat:write
 - commands
 - files:read
 - im:history
 - im:read
-remote_files:read
+- remote_files:read
 - users:read
+
+User Permissions:
+- channels:write
+- groups:write
+- mpim:write
+- im:write

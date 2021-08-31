@@ -55,6 +55,7 @@ class DiscardToken:
             self.chain.append(block)
 
     def is_chain_valid(self):
+        # TODO: multiprocess validation
         previous_block = None
         for block in self.chain:
             # validate block 1
@@ -158,6 +159,38 @@ class DiscardToken:
         block_hash = hashlib.sha256(block_string).hexdigest()
         return block_hash
 
+    @staticmethod
+    def determine_winner():
+        worker_lst = []
+        payouts_lst = []
+        for i in range(10):
+            random_name = ''.join(random.choices(string.ascii_letters + string.digits, k=4))
+            random_payout = random.randint(0, 1500)
+            worker_lst.append(random_name)
+            payouts_lst.append(random_payout)
+
+        highest_payout = max(payouts_lst)
+        #if payouts_lst.count(highest_payout) > 1:
+        #    for
+
+        try:
+            winning_worker_index = payouts_lst.index(highest_payout)
+            winning_worker = worker_lst[winning_worker_index]
+            print(worker_lst)
+            print(highest_payout)
+            print(payouts_lst)
+            print(list(zip(worker_lst, payouts_lst)))
+            return winning_worker
+        except ValueError:
+            print(worker_lst)
+            print(highest_payout)
+            print(payouts_lst)
+
+
+
+
+#init_chain = DiscardToken()
+#print(init_chain.determine_winner())
 
 
 # usage
@@ -197,7 +230,7 @@ if init_chain.is_chain_valid():
 init_chain = DiscardToken()
 
 # create fake transactions, add them to a block, add the block to the chain, validate chain
-number_of_transactions = 1000
+number_of_transactions = 2000
 number_of_transactions_per_block = 1
 time_start = time.time()
 king_wallet = 'the_kings_wallet'

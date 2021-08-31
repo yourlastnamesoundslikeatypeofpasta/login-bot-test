@@ -1,4 +1,6 @@
+import time
 from pprint import pprint
+import os
 
 from scripts.fetch_options import fetch_options
 
@@ -585,117 +587,112 @@ def mistake_selection_view(app, slackapierror, context, logger, ack=None):
 def send_mistakes_view(app, slackapierror, context, logger, ack=None):
     if 'employee_mistake_dict' in context:
         # build mistake section blocks and add approve/deny buttons
-        for mistake_report in context['employee_mistake_dict']:
-            mistake_block = {
-                "blocks": [
-                    {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": f"*{mistake_report['employee_name']} Mistake Report:*"
-                        }
+        for mistake_report in context['employee_mistake_dict']:  # todo: dont forgot to remove slice
+            mistake_block = [
+                {
+                    "type": "header",
+                    "block_id": "header_block",
+                    "text": {
+                        "type": "plain_text",
+                        "text": f"{mistake_report['employee_name']} Mistake Report",
                     }
-                ]
-            }
-            for mistake in mistake_report['employee_mistakes']:
+                },
+                {
+                    "type": "divider"
+                }
+            ]
+            for index, mistake in enumerate(mistake_report['employee_mistakes']):
                 section_with_mistakes_block = {
                     "type": "section",
+                    "block_id": f"block_mistake_body_{index}",
                     "fields": [
                         {
                             "type": "mrkdwn",
-                            "text": f"*Entered Date:*\n{mistake['entered_dated']}"
+                            "text": f"*Mistake Type:*\n_{mistake['mistake_type']}_"
                         },
                         {
                             "type": "mrkdwn",
-                            "text": f"*Incident Date:*\n{mistake['incident_date']}"
+                            "text": f"*Incident Notes:*\n_{mistake['incident_notes']}_"
                         },
                         {
                             "type": "mrkdwn",
-                            "text": f"*Mistake Type:*\n{mistake['mistake_type']}"
+                            "text": f"*Entered Date:*\n_{mistake['entered_date']}_"
                         },
                         {
                             "type": "mrkdwn",
-                            "text": f"*Suite:*\n{mistake['suite']}"
+                            "text": f"*Incident Date:*\n_{mistake['incident_date']}_"
                         },
                         {
                             "type": "mrkdwn",
-                            "text": f"*Package ID:*\n{mistake['pkg_id']}"
+                            "text": f"*Suite:*\n_{mistake['suite']}_"
                         },
                         {
                             "type": "mrkdwn",
-                            "text": f"*Incident Notes:*\n{mistake['incident_notes']}"
+                            "text": f"*Package ID:*\n_{mistake['pkg_id']}_"
+                        }
+                    ],
+                    "accessory": {
+                        "type": "overflow",
+                        "options": [
+                            {
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "Appeal",
+                                },
+                                "value": f'{index}'
+                            },
+                            {
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "Help",
+                                },
+                                "value": "help"
+                            }
+                        ],
+                        "action_id": "appeal_mistake_view"
+                    }
+                }
+                mistake_block.append(section_with_mistakes_block)
+                package_button_links_block = {
+                    "type": "actions",
+                    "elements": [
+                        {
+                            "type": "button",
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Package Link",
+                            },
+                            "url": f"http://backoffice.myus.com/Warehouse/PackageMaint.aspx?packageId={mistake['pkg_id']}"
+                        },
+                        {
+                            "type": "button",
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Package Photos",
+                            },
+                            "url": f"http://backoffice.myus.com/Shared/AllPhotos.aspx?PackageID={mistake['pkg_id']}"
+                        },
+                        {
+                            "type": "button",
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Package MI",
+                            },
+                            "url": f"http://backoffice.myus.com/Shared/Controls/PackageDocument.aspx?pkgid={mistake['pkg_id']}"
                         }
                     ]
                 }
-                mistake_block['blocks'].append(section_with_mistakes_block)
-            # add approve/deny buttons
-            approve_deny_button_block = {
-                "type": "actions",
-                "elements": [
-                    {
-                        "type": "button",
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Approve"
-                        },
-                        "style": "primary",
-                        "value": "click_me_123"
-                    },
-                    {
-                        "type": "button",
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Deny"
-                        },
-                        "style": "danger",
-                        "value": "click_me_123"
-                    }
-                ]
-            }
-            mistake_block['blocks'].append(approve_deny_button_block)
-        app.client.conversations.open(
-            channel=context['channel_id']
-        )
-    else:
-        blocks = [
-                    {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": "⚠Prototype: Please send mistakes to yourself⚠\nFinal version will send mistakes to individuals"
-                        },
-                        "accessory": {
-                            "type": "users_select",
-                            "placeholder": {
-                                "type": "plain_text",
-                                "text": "Select a user",
-                            },
-                            "action_id": "users_select-action"
-                        }
-                    }
-                ]
-        view = {
-            {
-                "type": "modal",
-                "callback_id": "user_to_send_mistakes_to_selected",
-                "title": {
-                    "type": "plain_text",
-                    "text": "Send Mistakes",
-                },
-                "submit": {
-                    "type": "plain_text",
-                    "text": "Submit",
-                },
-                "type": "modal",
-                "close": {
-                    "type": "plain_text",
-                    "text": "Cancel",
-                },
-                "blocks": blocks
-            }
-        }
-        trigger_id = context['trigger_id']
-        app.client.views_open(
-            trigger_id=trigger_id,
-            view=view
-        )
+                mistake_block.append(package_button_links_block)
+                mistake_block.append({"type": "divider"})
+
+            channel_id = app.client.conversations_open(
+                users=context['selected_user']
+            )['channel']['id']
+            try:
+                app.client.chat_postMessage(
+                    channel=channel_id,
+                    blocks=mistake_block,
+                    text='Mistake Report',
+                )
+            except slackapierror as e:
+                print(e)

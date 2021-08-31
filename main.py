@@ -409,7 +409,7 @@ def acknowledge_file_shared(ack, body, context, logger):
 # acknowledge file_shared subtype
 @app.event('message',
            matchers=[lambda message: message.get('subtype') != 'file_shared'],
-           middleware=[download_file_shared, parse_file_download])
+           middleware=[download_file_shared])
 def acknowledge_file_shared(ack, event, context, logger):
     ack()
     channel = event['channel']
@@ -432,15 +432,215 @@ def acknowledge_file_shared(ack, event, context, logger):
         }
     ]
     if user != BOT_ID:
-        app.client.chat_postMessage(channel=channel,
-                                    blocks=blocks)
+        app.client.chat_postEphemeral(channel=channel,
+                                      user=user,
+                                      blocks=blocks,
+                                      text='Send Mistake Report')
 
 
-@app.action('users_select-action')
-def send_mistakes(ack, context, respond, logger):
+@app.action('users_select-action', middleware=[parse_file_download])
+# @app.action('users_select-action')
+def send_mistakes(ack, context, body, respond, payload, logger):
+    ack()
+    # pprint(body)
+    # print(MistakeReport.instances[-1])
+    context['channel_id'] = body['channel']['id']
     respond('Sending Mistakes...')
-    pprint(context)
+    context['selected_user'] = body['actions'][0]['selected_user']
+    # pprint(context)
     send_mistakes_view(app, SlackApiError, context, logger)
+
+
+# appeal mistake view
+@app.action("appeal_mistake_view")
+def show_appeal_mistake_submission_view(ack, body, context, event, view, payload, logger):
+    ack()
+    # find the mistake the user would like to appeal and show appeal view with mistake section and multiline section
+    mistake_appeal_index = body['actions'][0]['selected_option']['value']
+    message_blocks = body['message']['blocks']
+    mistake_message_section = {
+        "type": "section",
+        "text": {
+            "type": "mrkdwn",
+            "text": "`Mistake not found. Please report this error to Christian`"
+        }
+    }
+    for block in message_blocks:
+        if block['block_id'] == f'block_mistake_body_{mistake_appeal_index}':
+            # remove overflow menu from section mistake section
+            mistake_message_section = block
+            del mistake_message_section['accessory']
+            break
+
+    blocks = [
+        mistake_message_section,
+        {
+            "type": "input",
+            "block_id": 'block_shift_selection',
+            "element": {
+                "type": "static_select",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Select your shift",
+                },
+                "options": [
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "1st Shift"
+                        },
+                        "value": "1"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "2nd Shift",
+                        },
+                        "value": "2"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "3rd Shift"
+                        },
+                        "value": "3"
+                    }
+                ],
+                "action_id": "static_select-action"
+            },
+            "label": {
+                "type": "plain_text",
+                "text": "Shift",
+            }
+        },
+        {
+            "type": "input",
+            "block_id": "block_description",
+            "element": {
+                "type": "plain_text_input",
+                "multiline": True,
+                "action_id": "plain_text_input-action",
+                "max_length": 250,
+            },
+            "label": {
+                "type": "plain_text",
+                "text": "Brief Description",
+            }
+        }
+    ]
+    view = {
+        "type": "modal",
+        "callback_id": "appeal_mistake_submitted",
+        "title": {
+            "type": "plain_text",
+            "text": "My App",
+        },
+        "submit": {
+            "type": "plain_text",
+            "text": "Submit",
+        },
+        "close": {
+            "type": "plain_text",
+            "text": "Cancel",
+        },
+        "blocks": blocks
+    }
+    app.client.views_open(
+        trigger_id=body['trigger_id'],
+        view=view
+    )
+
+
+@app.view('appeal_mistake_submitted')
+def send_mistake_to_triage(ack, body, view, context, logger):
+    ack()
+    pprint(view)
+    selected_shift = view['state']['values']['block_shift_selection']['static_select-action']['selected_option']['value']
+    description = view['state']['values']['block_description']['plain_text_input-action']['value']
+    first_shift_value = 1
+    second_shift_value = 2
+    third_shift_value = 3
+    if selected_shift == 1:
+        shift_inbox_name = '1st-shift-inbox'
+    elif selected_shift == 2:
+        shift_inbox_name = '2nd-shift-inbox'
+    else:
+        shift_inbox_name = '3rd-shift-inbox'
+    blocks = [
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "You have a new request:\n*<fakeLink.toEmployeeProfile.com|Fred Enriquez - New device request>*"
+            }
+        },
+        {
+            "type": "section",
+            "fields": [
+                {
+                    "type": "mrkdwn",
+                    "text": "*Type:*\nComputer (laptop)"
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": "*When:*\nSubmitted Aut 10"
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": "*Last Update:*\nMar 10, 2015 (3 years, 5 months)"
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": "*Reason:*\nAll vowel keys aren't working."
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": "*Specs:*\n\"Cheetah Pro 15\" - Fast, really fast\""
+                }
+            ]
+        },
+        {
+            "type": "actions",
+            "elements": [
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "Approve"
+                    },
+                    "style": "primary",
+                    "value": "click_me_123"
+                },
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "Deny"
+                    },
+                    "style": "danger",
+                    "value": "click_me_123"
+                }
+            ]
+        }
+    ]
+    channel_id_lst = app.client.conversations_list(
+        types='private_channel'
+    )
+    pprint(channel_id_lst)
+    for channel in channel_id_lst['channels']:
+        if shift_inbox_name == channel['name']:
+            channel_id = channel['id']
+            print(channel_id)
+            app.client.chat_postMessage(
+                channel=channel_id,
+                blocks=blocks,
+                text='Mistake Appeal Submitted'
+            )
+
+
+@app.view('appeal_mistake_submitted')
+def send_mistake_to_triage(ack, body, context, logger):
+    ack()
 
 
 # acknowledge file created
