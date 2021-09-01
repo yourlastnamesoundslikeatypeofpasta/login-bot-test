@@ -121,15 +121,17 @@ def download_file_shared(body, context, event, next, logger):
         'Authorization': f"Bearer {token}"
     }  # token in headers is needed to download private files from the workspace
     r = requests.get(url=file_download_link, headers=headers)
+    file_downloads_dir = os.path.join('resources', 'downloads')
     file_download_path = os.path.join('resources', 'downloads', file_name)
-    file_exists = os.path.exists(file_download_path)
-    if not file_exists:
-        resources_downloads_path = os.path.join('resources', 'downloads')
-        os.makedirs(resources_downloads_path)
+    if not os.path.exists(file_downloads_dir):
+        os.makedirs(file_download_path)
 
-    with open(file_download_path, 'wb') as f:
-        for chunk in r.iter_content():
-            f.write(chunk)
+    try:
+        with open(file_download_path, 'wb') as f:
+            for chunk in r.iter_content():
+                f.write(chunk)
+    except PermissionError:
+        logger.error('Permissions Error')
     mistakes = MistakeReport(file_download_path)
     next()
 
