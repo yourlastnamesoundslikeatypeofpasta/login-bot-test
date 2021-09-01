@@ -594,7 +594,7 @@ def send_mistakes_view(app, slackapierror, context, logger, ack=None):
                     "block_id": "header_block",
                     "text": {
                         "type": "plain_text",
-                        "text": f"{mistake_report['employee_name']} Mistake Report",
+                        "text": f"{mistake_report['employee_name']} Mistake Report [[DATE-DATE] PLACEHOLDER]",
                     }
                 },
                 {
@@ -608,28 +608,28 @@ def send_mistakes_view(app, slackapierror, context, logger, ack=None):
                     "fields": [
                         {
                             "type": "mrkdwn",
-                            "text": f"*Mistake Type:*\n_{mistake['mistake_type']}_"
+                            "text": f"*Entered Date:*\n```{mistake['entered_date']}```"
                         },
                         {
                             "type": "mrkdwn",
-                            "text": f"*Incident Notes:*\n_{mistake['incident_notes']}_"
+                            "text": f"*Incident Date:*\n```{mistake['incident_date']}```"
                         },
                         {
                             "type": "mrkdwn",
-                            "text": f"*Entered Date:*\n_{mistake['entered_date']}_"
+                            "text": f"*Suite:*\n_<http://backoffice.myus.com/Warehouse/PackageMaint.aspx?packageId={mistake['suite']}|```{mistake['suite']} (link will be fixed in next update)```>_"
                         },
                         {
                             "type": "mrkdwn",
-                            "text": f"*Incident Date:*\n_{mistake['incident_date']}_"
+                            "text": f"*Package ID:*\n_<http://backoffice.myus.com/Warehouse/PackageMaint.aspx?packageId={mistake['pkg_id']}|```{mistake['pkg_id']}```>_"
                         },
                         {
                             "type": "mrkdwn",
-                            "text": f"*Suite:*\n_{mistake['suite']}_"
+                            "text": f"*Mistake Code:*\n```{mistake['mistake_type']}```"
                         },
                         {
                             "type": "mrkdwn",
-                            "text": f"*Package ID:*\n_{mistake['pkg_id']}_"
-                        }
+                            "text": f"*Incident Notes:*\n```{mistake['incident_notes']}```"
+                        },
                     ],
                     "accessory": {
                         "type": "overflow",
@@ -637,23 +637,44 @@ def send_mistakes_view(app, slackapierror, context, logger, ack=None):
                             {
                                 "text": {
                                     "type": "plain_text",
-                                    "text": "Dispute",
+                                    "text": "Package :package:",
+                                },
+                                "url": f"http://backoffice.myus.com/Warehouse/PackageMaint.aspx?packageId={mistake['pkg_id']}"
+                            },
+                            {
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "Package Photos :camera:",
+                                },
+                                "url": f"http://backoffice.myus.com/Shared/AllPhotos.aspx?PackageID={mistake['pkg_id']}"
+                            },
+                            {
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "Package MI :page_facing_up:",
+                                },
+                                "url": f"http://backoffice.myus.com/Shared/Controls/PackageDocument.aspx?pkgid={mistake['pkg_id']}"
+                            },
+                            {
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "Dispute :speaking_head_in_silhouette:",
                                 },
                                 "value": f'{index}'
                             },
                             {
                                 "text": {
                                     "type": "plain_text",
-                                    "text": "Help",
+                                    "text": "Help :sos:",
                                 },
                                 "value": "help"
-                            }
+                            },
                         ],
-                        "action_id": "dispute_mistake_view"
+                        "action_id": "mistake_overflow_action"
                     }
                 }
                 mistake_block.append(section_with_mistakes_block)
-                package_button_links_block = {
+                '''package_button_links_block = {
                     "type": "actions",
                     "elements": [
                         {
@@ -688,11 +709,11 @@ def send_mistakes_view(app, slackapierror, context, logger, ack=None):
                     "elements": [
                         {
                             "type": "plain_text",
-                            "text": "Button links only work on MyUs computers",
+                            "text": "Buttons and links only work on MyUs computers",
                         }
                     ]
                 }
-                mistake_block.append(context_block)
+                mistake_block.append(context_block)'''
                 mistake_block.append({"type": "divider"})
 
             channel_id = app.client.conversations_open(
