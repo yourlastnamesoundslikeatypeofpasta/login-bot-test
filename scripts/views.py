@@ -637,7 +637,7 @@ def send_mistakes_view(app, slackapierror, context, logger, ack=None):
                             {
                                 "text": {
                                     "type": "plain_text",
-                                    "text": "Appeal",
+                                    "text": "Dispute",
                                 },
                                 "value": f'{index}'
                             },
@@ -649,7 +649,7 @@ def send_mistakes_view(app, slackapierror, context, logger, ack=None):
                                 "value": "help"
                             }
                         ],
-                        "action_id": "appeal_mistake_view"
+                        "action_id": "dispute_mistake_view"
                     }
                 }
                 mistake_block.append(section_with_mistakes_block)
@@ -660,7 +660,7 @@ def send_mistakes_view(app, slackapierror, context, logger, ack=None):
                             "type": "button",
                             "text": {
                                 "type": "plain_text",
-                                "text": "Package Link",
+                                "text": "Package",
                             },
                             "url": f"http://backoffice.myus.com/Warehouse/PackageMaint.aspx?packageId={mistake['pkg_id']}"
                         },
@@ -683,6 +683,16 @@ def send_mistakes_view(app, slackapierror, context, logger, ack=None):
                     ]
                 }
                 mistake_block.append(package_button_links_block)
+                context_block = {
+                    "type": "context",
+                    "elements": [
+                        {
+                            "type": "plain_text",
+                            "text": "Button links only work on MyUs computers",
+                        }
+                    ]
+                }
+                mistake_block.append(context_block)
                 mistake_block.append({"type": "divider"})
 
             channel_id = app.client.conversations_open(
