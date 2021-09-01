@@ -452,11 +452,11 @@ def send_mistakes(ack, context, body, respond, payload, logger):
 
 
 # appeal mistake view
-@app.action("appeal_mistake_view")
-def show_appeal_mistake_submission_view(ack, body, context, event, view, payload, logger):
+@app.action("dispute_mistake_view")
+def show_dispute_mistake_submission_view(ack, body, context, event, view, payload, logger):
     ack()
     # find the mistake the user would like to appeal and show appeal view with mistake section and multiline section
-    mistake_appeal_index = body['actions'][0]['selected_option']['value']
+    mistake_dispute_index = body['actions'][0]['selected_option']['value']
     message_blocks = body['message']['blocks']
     mistake_message_section = {
         "type": "section",
@@ -466,7 +466,7 @@ def show_appeal_mistake_submission_view(ack, body, context, event, view, payload
         }
     }
     for block in message_blocks:
-        if block['block_id'] == f'block_mistake_body_{mistake_appeal_index}':
+        if block['block_id'] == f'block_mistake_body_{mistake_dispute_index}':
             # remove overflow menu from section mistake section
             mistake_message_section = block
             del mistake_message_section['accessory']
@@ -489,21 +489,21 @@ def show_appeal_mistake_submission_view(ack, body, context, event, view, payload
                             "type": "plain_text",
                             "text": "1st Shift"
                         },
-                        "value": "1"
+                        "value": '1st-shift-inbox'
                     },
                     {
                         "text": {
                             "type": "plain_text",
                             "text": "2nd Shift",
                         },
-                        "value": "2"
+                        "value": '2nd-shift-inbox'
                     },
                     {
                         "text": {
                             "type": "plain_text",
                             "text": "3rd Shift"
                         },
-                        "value": "3"
+                        "value": '3rd-shift-inbox'
                     }
                 ],
                 "action_id": "static_select-action"
@@ -554,18 +554,9 @@ def show_appeal_mistake_submission_view(ack, body, context, event, view, payload
 @app.view('appeal_mistake_submitted')
 def send_mistake_to_triage(ack, body, view, context, logger):
     ack()
-    pprint(view)
-    selected_shift = view['state']['values']['block_shift_selection']['static_select-action']['selected_option']['value']
+    #pprint(view)
+    selected_shift_inbox = view['state']['values']['block_shift_selection']['static_select-action']['selected_option']['value']
     description = view['state']['values']['block_description']['plain_text_input-action']['value']
-    first_shift_value = 1
-    second_shift_value = 2
-    third_shift_value = 3
-    if selected_shift == 1:
-        shift_inbox_name = '1st-shift-inbox'
-    elif selected_shift == 2:
-        shift_inbox_name = '2nd-shift-inbox'
-    else:
-        shift_inbox_name = '3rd-shift-inbox'
     blocks = [
         {
             "type": "section",
@@ -628,19 +619,13 @@ def send_mistake_to_triage(ack, body, view, context, logger):
     )
     pprint(channel_id_lst)
     for channel in channel_id_lst['channels']:
-        if shift_inbox_name == channel['name']:
+        if selected_shift_inbox == channel['name']:
             channel_id = channel['id']
-            print(channel_id)
             app.client.chat_postMessage(
                 channel=channel_id,
                 blocks=blocks,
                 text='Mistake Appeal Submitted'
             )
-
-
-@app.view('appeal_mistake_submitted')
-def send_mistake_to_triage(ack, body, context, logger):
-    ack()
 
 
 # acknowledge file created
