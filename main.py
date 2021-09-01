@@ -452,12 +452,48 @@ def send_mistakes(ack, context, body, respond, payload, logger):
 
 
 # appeal mistake view
-@app.action("dispute_mistake_view")
+@app.action("mistake_overflow_action")
 def show_dispute_mistake_submission_view(ack, body, context, event, view, payload, logger):
     ack()
+    overflow_selection_value = payload['selected_option']['value']
+    if 'help' in overflow_selection_value:
+        blocks = [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "*Package details not loading after clicking links or menu options? *\n• Connection to MyUs' network is required to view package details. Try clicking the links from your station."
+                }
+            },
+            {
+                "type": "divider"
+            },
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "*Slack not installed on your station?*\n• Click <https://www.microsoft.com/store/productId/9WZDNCRDK3WP|here> to install it through the Microsoft Store."
+                }
+            }
+        ]
+        view = {
+            "type": "modal",
+            "title": {
+                "type": "plain_text",
+                "text": "Help :sos:"
+            },
+            "blocks": blocks
+        }
+        app.client.views_open(
+            trigger_id=body['trigger_id'],
+            view=view
+        )
+        return
     # find the mistake the user would like to appeal and show appeal view with mistake section and multiline section
     mistake_dispute_index = body['actions'][0]['selected_option']['value']
     message_blocks = body['message']['blocks']
+
+    # get the correct mistake message section, and remove overflow from original mistake report
     mistake_message_section = {
         "type": "section",
         "text": {
@@ -467,13 +503,24 @@ def show_dispute_mistake_submission_view(ack, body, context, event, view, payloa
     }
     for block in message_blocks:
         if block['block_id'] == f'block_mistake_body_{mistake_dispute_index}':
-            # remove overflow menu from section mistake section
+            # remove dispute and help from the overflow menu
             mistake_message_section = block
-            del mistake_message_section['accessory']
+            mistake_message_section['accessory']['options'] = mistake_message_section['accessory']['options'][0:3]
             break
+
+    # get logger backoffice from mistake report header and add to mistake_message_section fields
+    logger_backoffice_name = body['message']['blocks'][0]['text']['text'].split(' Mistake Report')[0]
+    # logger_backoffice_name_field = {
+    #    'type': 'mrkdwn',
+    #    'text': f'*Backoffice Name:*\n```{logger_backoffice_name}```',
+    # }
+    # mistake_message_section['fields'].insert(0, logger_backoffice_name_field)
 
     blocks = [
         mistake_message_section,
+        {
+            "type": "divider"
+        },
         {
             "type": "input",
             "block_id": 'block_shift_selection',
@@ -530,10 +577,11 @@ def show_dispute_mistake_submission_view(ack, body, context, event, view, payloa
     ]
     view = {
         "type": "modal",
-        "callback_id": "appeal_mistake_submitted",
+        "callback_id": "dispute_mistake_submitted",
+        "private_metadata": logger_backoffice_name,
         "title": {
             "type": "plain_text",
-            "text": "My App",
+            "text": "Dispute Mistake",
         },
         "submit": {
             "type": "plain_text",
@@ -551,18 +599,77 @@ def show_dispute_mistake_submission_view(ack, body, context, event, view, payloa
     )
 
 
-@app.view('appeal_mistake_submitted')
+@app.view('dispute_mistake_submitted')
 def send_mistake_to_triage(ack, body, view, context, logger):
     ack()
-    #pprint(view)
-    selected_shift_inbox = view['state']['values']['block_shift_selection']['static_select-action']['selected_option']['value']
-    description = view['state']['values']['block_description']['plain_text_input-action']['value']
+    mistake_section_body_block = view['blocks'][0]
+
+    # get values
+    selected_shift_inbox = view['state']['values']['block_shift_selection']['static_select-action']['selected_option'][
+        'value']
+    brief_description = view['state']['values']['block_description']['plain_text_input-action']['value']
+    user = body['user']['id']
+    backoffice_name = view['private_metadata']
+
+    # get over flow menu and delete it so it can be attached to another block
+    over_flow_menu = view['blocks'][0]['accessory']
+    del view['blocks'][0]['accessory']
+
+    # confirm approval or denial
+    confirm_approve_dialog_obj = {
+        "title": {
+            "type": "plain_text",
+            "text": "Are you sure?"
+        },
+        "text": {
+            "type": "mrkdwn",
+            "text": "This action cannot be undone"
+        },
+        "confirm": {
+            "type": "plain_text",
+            "text": "Approve",
+        },
+        "deny": {
+            "type": "plain_text",
+            "text": "I've changed my mind!"
+        }
+    }
+    confirm_deny_dialog_obj = {
+        "title": {
+            "type": "plain_text",
+            "text": "Are you sure?"
+        },
+        "text": {
+            "type": "mrkdwn",
+            "text": "This action cannot be undone"
+        },
+        "confirm": {
+            "type": "plain_text",
+            "text": "Deny",
+        },
+        "deny": {
+            "type": "plain_text",
+            "text": "I've changed my mind!"
+        },
+        "style": "danger"
+    }
+
     blocks = [
         {
-            "type": "section",
+            "type": "header",
             "text": {
-                "type": "mrkdwn",
-                "text": "You have a new request:\n*<fakeLink.toEmployeeProfile.com|Fred Enriquez - New device request>*"
+                "type": "plain_text",
+                "text": "Mistake Dispute Request",
+            }
+        },
+        {
+            "type": "divider"
+        },
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "Employee:",
             }
         },
         {
@@ -570,25 +677,39 @@ def send_mistake_to_triage(ack, body, view, context, logger):
             "fields": [
                 {
                     "type": "mrkdwn",
-                    "text": "*Type:*\nComputer (laptop)"
+                    "text": f"*Backoffice Name:*\n```{backoffice_name}```"
                 },
                 {
                     "type": "mrkdwn",
-                    "text": "*When:*\nSubmitted Aut 10"
+                    "text": f"*Slack Profile:*\n```<@{user}>```"
                 },
-                {
-                    "type": "mrkdwn",
-                    "text": "*Last Update:*\nMar 10, 2015 (3 years, 5 months)"
-                },
-                {
-                    "type": "mrkdwn",
-                    "text": "*Reason:*\nAll vowel keys aren't working."
-                },
-                {
-                    "type": "mrkdwn",
-                    "text": "*Specs:*\n\"Cheetah Pro 15\" - Fast, really fast\""
-                }
-            ]
+            ],
+            "accessory": over_flow_menu
+        },
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "Mistake:",
+            }
+        },
+        mistake_section_body_block,
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "Dispute Reason:",
+            }
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f'```{brief_description}```',
+            },
+        },
+        {
+            "type": "divider"
         },
         {
             "type": "actions",
@@ -599,8 +720,10 @@ def send_mistake_to_triage(ack, body, view, context, logger):
                         "type": "plain_text",
                         "text": "Approve"
                     },
+                    "action_id": "approve_dispute",
                     "style": "primary",
-                    "value": "click_me_123"
+                    "value": "approve_dispute",
+                    "confirm": confirm_approve_dialog_obj
                 },
                 {
                     "type": "button",
@@ -608,8 +731,10 @@ def send_mistake_to_triage(ack, body, view, context, logger):
                         "type": "plain_text",
                         "text": "Deny"
                     },
+                    "action_id": "deny_dispute",
                     "style": "danger",
-                    "value": "click_me_123"
+                    "value": "deny_dispute",
+                    "confirm": confirm_deny_dialog_obj
                 }
             ]
         }
@@ -617,7 +742,6 @@ def send_mistake_to_triage(ack, body, view, context, logger):
     channel_id_lst = app.client.conversations_list(
         types='private_channel'
     )
-    pprint(channel_id_lst)
     for channel in channel_id_lst['channels']:
         if selected_shift_inbox == channel['name']:
             channel_id = channel['id']
@@ -626,6 +750,62 @@ def send_mistake_to_triage(ack, body, view, context, logger):
                 blocks=blocks,
                 text='Mistake Appeal Submitted'
             )
+
+
+@app.action("approve_dispute")
+def edit_message_and_notify_employee_of_approval(ack, body, respond, payload, event, view, context, logger):
+    ack()
+    blocks = body['message']['blocks']
+    del blocks[-1]
+
+    user = body['user']['id']
+    channel = body['channel']['id']
+
+    approval_block = {
+        "type": "section",
+        "text": {
+            "type": "mrkdwn",
+            "text": f":thumbsup: <@{user}> approved this mistake",
+        }
+    }
+    blocks.append(approval_block)
+
+    ts = body['message']['ts']
+
+    app.client.chat_update(
+        channel=channel,
+        ts=ts,
+        blocks=blocks,
+        text='Mistake Approved'
+    )
+
+
+@app.action("deny_dispute")
+def edit_message_and_notify_employee_of_denial(ack, body, context, respond, logger):
+    ack()
+    blocks = body['message']['blocks']
+    del blocks[-1]
+
+    user = body['user']['id']
+    channel = body['channel']['id']
+
+    approval_block = {
+        "type": "section",
+        "text": {
+            "type": "mrkdwn",
+            "text": f":thumbsdown: <@{user}> denied this mistake",
+        }
+    }
+    blocks.append(approval_block)
+
+    ts = body['message']['ts']
+
+    app.client.chat_update(
+        channel=channel,
+        ts=ts,
+        blocks=blocks,
+        text='Mistake Denied'
+    )
 
 
 # acknowledge file created
