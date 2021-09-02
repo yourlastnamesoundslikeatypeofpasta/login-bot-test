@@ -1,6 +1,4 @@
 # login-bot-test
-A Proof of Concept Slack Slash Command Bot
-
 <!-- TABLE OF CONTENTS -->
 <details open="open">
   <summary>Table of Contents</summary>
@@ -19,9 +17,39 @@ A Proof of Concept Slack Slash Command Bot
       </ul>
     </li>
     <li><a href="#usage">Usage</a></li>
+    <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#contact">Contact</a></li>
+    <li><a href="#license">License</a></li>
     <li><a href="#acknowledgements">Acknowledgements</a></li>
   </ol>
 </details>
 
-# Read Me Under Development
+<!-- ABOUT THE PROJECT -->
+## About The Project
+An alpha proof of concept Slack Bot.
+
+##Built With
+
+<!-- GETTING STARTED -->
+## Getting Started
+### Prerequisites
+###Python Requirements
+### Installation
+
+<!-- USAGE EXAMPLES -->
+##Usage
+
+<!-- ROADMAP -->
+## Roadmap
+
+<!-- LICENSE -->
+## License
+
+<!-- CONTACT -->
+## Contact
+
+<!-- ACKNOWLEDGEMENTS -->
+## Acknowledgements
+
+
+
