@@ -9,7 +9,7 @@ def fetch_options():
                 "type": "plain_text",
                 "text": f"{mistake_code.upper()} ({point_value} points)"
             },
-            "value": f"{mistake_code}"
+            "value": f"{point_value}"
         }
         )
     return options_lst
