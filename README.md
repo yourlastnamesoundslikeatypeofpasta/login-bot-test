@@ -33,11 +33,11 @@ An alpha proof of concept Slack Bot.
 <!-- GETTING STARTED -->
 ## Getting Started
 ### Prerequisites
-###Python Requirements
+### Python Requirements
 ### Installation
 
 <!-- USAGE EXAMPLES -->
-##Usage
+## Usage
 
 <!-- ROADMAP -->
 ## Roadmap
