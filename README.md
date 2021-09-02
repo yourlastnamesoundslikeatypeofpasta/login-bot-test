@@ -28,7 +28,7 @@
 ## About The Project
 An alpha proof of concept Slack Bot.
 
-##Built With
+## Built With
 
 <!-- GETTING STARTED -->
 ## Getting Started
