@@ -82,21 +82,22 @@ def piece_pay_calc_root_view(ack, context, logger):
 
 
 # tier menu select action
-# tier menu select requires a 200 response when an item is selected. idk y this is required
+# tier menu select requires a 200 response when an item is selected. idk y this is required # todo: change to sectionless static view
 @app.action("static_tier_selected_do_nothing_please")
 def shout_200_to_the_slack_gods(ack):
     ack()
 
 
 # mistake selection view
-@app.action('add_mistakes_button_click', middleware=[fetch_trigger_id, check_if_input_empty])
+@app.action('add_mistakes_button_click', middleware=[fetch_trigger_id, is_points_clear_block])
 def open_mistake_view(ack, body, context, logger):
     ack()
     mistake_selection_view(app, SlackApiError, context, logger)
 
 
 # update root view with mistake submission from mistake selection view
-@app.view('root_view_plus_mistake_points_view', middleware=[fetch_trigger_id, fetch_mistake_points])
+@app.view('root_view_plus_mistake_points_view', middleware=[fetch_trigger_id, fetch_root_id,
+                                                            fetch_current_mistake_points, fetch_selected_mistake_points])
 def root_with_mistakes_view(ack, body, context, logger):
     ack()
     piece_pay_calc_view(app, body, context, logger, ack=ack)
@@ -510,17 +511,9 @@ def show_dispute_mistake_submission_view(ack, body, context, event, view, payloa
 
     # get logger backoffice from mistake report header and add to mistake_message_section fields
     logger_backoffice_name = body['message']['blocks'][0]['text']['text'].split(' Mistake Report')[0]
-    # logger_backoffice_name_field = {
-    #    'type': 'mrkdwn',
-    #    'text': f'*Backoffice Name:*\n```{logger_backoffice_name}```',
-    # }
-    # mistake_message_section['fields'].insert(0, logger_backoffice_name_field)
 
     blocks = [
         mistake_message_section,
-        {
-            "type": "divider"
-        },
         {
             "type": "input",
             "block_id": 'block_shift_selection',
@@ -616,6 +609,98 @@ def send_mistake_to_triage(ack, body, view, context, logger):
     del view['blocks'][0]['accessory']
 
     # confirm approval or denial
+
+    mistake_section_body_block["accessory"] = over_flow_menu
+
+    blocks = [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "Mistake Dispute Request",
+            }
+        },
+        {
+            "type": "divider"
+        },
+        {
+            "type": "section",
+            "fields": [
+                {
+                    "type": "mrkdwn",
+                    "text": f"*Backoffice Name:*\n```{backoffice_name}```"
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": f"*Slack Profile:*\n```<@{user}>```"
+                },
+            ],
+        },
+        mistake_section_body_block,
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "Dispute Reason:",
+            }
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f'```{brief_description}```',
+            },
+        },
+        {
+            "type": "divider"
+        },
+        {
+            "type": "actions",
+            "elements": [
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "Claim"
+                    },
+                    "action_id": "claim_dispute",
+                    "value": "claim_dispute",
+                }
+            ]
+        },
+    ]
+    channel_id_lst = app.client.conversations_list(
+        types='private_channel'
+    )
+    for channel in channel_id_lst['channels']:
+        if selected_shift_inbox == channel['name']:
+            channel_id = channel['id']
+            app.client.chat_postMessage(
+                channel=channel_id,
+                blocks=blocks,
+                text='Mistake Appeal Submitted'
+            )
+
+
+@app.action("claim_dispute")
+def show_claimer_and_approve_deny_buttons(ack, body, respond, payload, event, view, context, logger):
+    ack()
+    # remove claim button block
+    blocks = body['message']['blocks']
+    del blocks[-1]
+
+    # add claimer text block
+    user = body['user']['id']
+    claimer_block = {
+        "type": "section",
+        "text": {
+            "type": "mrkdwn",
+            "text": f":writing_hand:<@{user}> is researching this mistake",
+        }
+    }
+
+    # add approve, deny buttons
+    blocks.append(claimer_block)
     confirm_approve_dialog_obj = {
         "title": {
             "type": "plain_text",
@@ -653,103 +738,44 @@ def send_mistake_to_triage(ack, body, view, context, logger):
         },
         "style": "danger"
     }
-
-    blocks = [
-        {
-            "type": "header",
-            "text": {
-                "type": "plain_text",
-                "text": "Mistake Dispute Request",
-            }
-        },
-        {
-            "type": "divider"
-        },
-        {
-            "type": "header",
-            "text": {
-                "type": "plain_text",
-                "text": "Employee:",
-            }
-        },
-        {
-            "type": "section",
-            "fields": [
-                {
-                    "type": "mrkdwn",
-                    "text": f"*Backoffice Name:*\n```{backoffice_name}```"
+    approve_deny_button_blocks = {
+        "type": "actions",
+        "elements": [
+            {
+                "type": "button",
+                "text": {
+                    "type": "plain_text",
+                    "text": "Approve"
                 },
-                {
-                    "type": "mrkdwn",
-                    "text": f"*Slack Profile:*\n```<@{user}>```"
-                },
-            ],
-            "accessory": over_flow_menu
-        },
-        {
-            "type": "header",
-            "text": {
-                "type": "plain_text",
-                "text": "Mistake:",
-            }
-        },
-        mistake_section_body_block,
-        {
-            "type": "header",
-            "text": {
-                "type": "plain_text",
-                "text": "Dispute Reason:",
-            }
-        },
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f'```{brief_description}```',
+                "action_id": "approve_dispute",
+                "style": "primary",
+                "value": "approve_dispute",
+                "confirm": confirm_approve_dialog_obj
             },
-        },
-        {
-            "type": "divider"
-        },
-        {
-            "type": "actions",
-            "elements": [
-                {
-                    "type": "button",
-                    "text": {
-                        "type": "plain_text",
-                        "text": "Approve"
-                    },
-                    "action_id": "approve_dispute",
-                    "style": "primary",
-                    "value": "approve_dispute",
-                    "confirm": confirm_approve_dialog_obj
+            {
+                "type": "button",
+                "text": {
+                    "type": "plain_text",
+                    "text": "Deny"
                 },
-                {
-                    "type": "button",
-                    "text": {
-                        "type": "plain_text",
-                        "text": "Deny"
-                    },
-                    "action_id": "deny_dispute",
-                    "style": "danger",
-                    "value": "deny_dispute",
-                    "confirm": confirm_deny_dialog_obj
-                }
-            ]
-        }
-    ]
-    channel_id_lst = app.client.conversations_list(
-        types='private_channel'
+                "action_id": "deny_dispute",
+                "style": "danger",
+                "value": "deny_dispute",
+                "confirm": confirm_deny_dialog_obj
+            }
+        ]
+    }
+    blocks.append(approve_deny_button_blocks)
+
+    # update message
+    channel = body['channel']['id']
+    ts = body['message']['ts']
+    app.client.chat_update(
+        channel=channel,
+        ts=ts,
+        blocks=blocks,
+        text='Mistake Claimed'
     )
-    for channel in channel_id_lst['channels']:
-        if selected_shift_inbox == channel['name']:
-            channel_id = channel['id']
-            app.client.chat_postMessage(
-                channel=channel_id,
-                blocks=blocks,
-                text='Mistake Appeal Submitted'
-            )
 
 
 @app.action("approve_dispute")
@@ -857,5 +883,4 @@ def bonus(ack, respond, command):
 
 
 if __name__ == '__main__':
-    # create_db()
     app.start(port=3000)
