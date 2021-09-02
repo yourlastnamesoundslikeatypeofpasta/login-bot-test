@@ -567,8 +567,8 @@ def mistake_selection_view(app, slackapierror, context, logger, ack=None):
         },
         "blocks": blocks
     }
-    if 'private_metadata' in context:
-        view['private_metadata'] = context['private_metadata']
+    if context['is_points_clear_block']:
+        view['private_metadata'] = context['points']
     try:
         app.client.views_push(
             trigger_id=context['trigger_id'],

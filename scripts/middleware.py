@@ -24,8 +24,17 @@ def fetch_trigger_id(body, context, event, next):
     next()
 
 
-def check_if_input_empty(body, context, next):
-    values_lst = []
+def is_points_clear_block(body, context, next):
+    try:
+        points_clear_block = body['view']['blocks'][5]
+        if points_clear_block:
+            context['is_points_clear_block'] = True
+            context['points'] = body['view']['blocks'][5]['text']['text']
+            next()
+    except IndexError:
+        context['is_points_clear_block'] = False
+        next()
+    """values_lst = []
     package_input = body['view']['state']['values']['block_package']['package_input']['value']
     item_input = body['view']['state']['values']['block_items']['item_input']['value']
     weight_input = body['view']['state']['values']['block_weight']['weight_input']['value']
@@ -41,6 +50,7 @@ def check_if_input_empty(body, context, next):
             next()
             return
     next()
+"""
 
 
 def calculate_production_score(view, context, next):
@@ -75,28 +85,42 @@ def calculate_production_score(view, context, next):
     next()
 
 
-def fetch_mistake_points(body, context, next):
-    are_inputs_empty = body['view']['private_metadata']
-    mistake_code = \
-        body['view']['state']['values']['block_mistake_static_select']['action_static_mistake']['selected_option'][
-            'value']
+def fetch_current_mistake_points(body, context, next):
+    context['mistake_points'] = body['view']['private_metadata']
+    next()
 
-    context['root_view_id'] = body['view']['root_view_id']
-    # check if a Mistakes instance exists
-    if are_inputs_empty:  # todo: mistakes are not disappearing when modal is closed and reopened
-        # create one
-        mistakes = Mistakes()
-        mistakes.add_mistake(mistake_code)
-        context['mistake_points'] = mistakes.get_mistake_points()
-        pprint(Mistakes.instances)
-        next()
-        return
+
+def fetch_selected_mistake_points(body, context, next):
+    selected_mistake_points = body['view']['state']['values']['block_mistake_static_select']['action_static_mistake']['selected_option']['value']
+    if context['mistake_points']:
+        total_points = int(context['mistake_points']) + int(selected_mistake_points)
     else:
-        # use the last instance
-        mistakes = Mistakes.instances[-1]
+        total_points = selected_mistake_points
+
+    context['mistake_points'] = str(total_points)
+    next()
+
+
+""" mistake_code = 
+    body['view']['state']['values']['block_mistake_static_select']['action_static_mistake']['selected_option'][
+        'value']
+
+context['root_view_id'] = body['view']['root_view_id']
+# check if a Mistakes instance exists
+if are_inputs_empty:  # todo: mistakes are not disappearing when modal is closed and reopened
+    # create one
+    mistakes = Mistakes()
     mistakes.add_mistake(mistake_code)
     context['mistake_points'] = mistakes.get_mistake_points()
+    pprint(Mistakes.instances)
     next()
+    return
+else:
+    # use the last instance
+    mistakes = Mistakes.instances[-1]
+mistakes.add_mistake(mistake_code)
+context['mistake_points'] = mistakes.get_mistake_points()
+next()"""
 
 
 def fetch_root_id(body, context, next):
