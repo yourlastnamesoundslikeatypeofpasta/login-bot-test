@@ -674,46 +674,6 @@ def send_mistakes_view(app, slackapierror, context, logger, ack=None):
                     }
                 }
                 mistake_block.append(section_with_mistakes_block)
-                '''package_button_links_block = {
-                    "type": "actions",
-                    "elements": [
-                        {
-                            "type": "button",
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Package",
-                            },
-                            "url": f"http://backoffice.myus.com/Warehouse/PackageMaint.aspx?packageId={mistake['pkg_id']}"
-                        },
-                        {
-                            "type": "button",
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Package Photos",
-                            },
-                            "url": f"http://backoffice.myus.com/Shared/AllPhotos.aspx?PackageID={mistake['pkg_id']}"
-                        },
-                        {
-                            "type": "button",
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Package MI",
-                            },
-                            "url": f"http://backoffice.myus.com/Shared/Controls/PackageDocument.aspx?pkgid={mistake['pkg_id']}"
-                        }
-                    ]
-                }
-                mistake_block.append(package_button_links_block)
-                context_block = {
-                    "type": "context",
-                    "elements": [
-                        {
-                            "type": "plain_text",
-                            "text": "Buttons and links only work on MyUs computers",
-                        }
-                    ]
-                }
-                mistake_block.append(context_block)'''
                 mistake_block.append({"type": "divider"})
 
             channel_id = app.client.conversations_open(
