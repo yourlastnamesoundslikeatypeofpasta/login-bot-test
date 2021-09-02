@@ -168,79 +168,73 @@ def show_productivity_calc_view(app, slackapierror, context, logger, ack=None):
         },
         "blocks": blocks
     }
-    try:
-        # validation error view
-        if context['error_response']:
-            error_response_action = context['error_response']
-            ack(error_response_action)
-    except KeyError:
-        try:
-            # calculate packages view
-            if context['package_count']:
-                production_score_blocks = [
+    # validation error view
+    if "error_response" in context:
+        error_response_action = context['error_response']
+        ack(error_response_action)
+    elif "package_count" in context:
+        # calculate packages view
+        production_score_blocks = [
+            {
+                "type": "section",
+                "fields": [
                     {
-                        "type": "section",
-                        "fields": [
-                            {
-                                "type": "mrkdwn",
-                                "text": f"*Packages* :package:: `{context['package_count']:.2f}`"
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": f"*Weight* :weight_lifter:: `{context['weight_count']:.2f}`"
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": f"*Items* :shopping_trolley:: `{context['item_count']:.2f}`"
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": f"*Hours* :clock1:: `{context['hour_count']:.2f}`"
-                            },
-                        ],
+                        "type": "mrkdwn",
+                        "text": f"*Packages* :package:: `{context['package_count']:.2f}`"
                     },
                     {
-                        "type": "divider"
+                        "type": "mrkdwn",
+                        "text": f"*Weight* :weight_lifter:: `{context['weight_count']:.2f}`"
                     },
                     {
-                        "type": "section",
-                        "fields": [
-                            {
-                                "type": "mrkdwn",
-                                "text": f"*Packages/Hour*: `{context['pkg_per_hour']:.2f}`"
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": f"*Weight/Package*: `{context['weight_per_package']:.2f}`"
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": f"*Items/Package*: `{context['items_per_pkg']:.2f}`"
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": f"*Productivity Score:* `{context['production_score']:.2f}` :dash:"
-                            },
-                        ]
-                    }
+                        "type": "mrkdwn",
+                        "text": f"*Items* :shopping_trolley:: `{context['item_count']:.2f}`"
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Hours* :clock1:: `{context['hour_count']:.2f}`"
+                    },
+                ],
+            },
+            {
+                "type": "divider"
+            },
+            {
+                "type": "section",
+                "fields": [
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Packages/Hour*: `{context['pkg_per_hour']:.2f}`"
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Weight/Package*: `{context['weight_per_package']:.2f}`"
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Items/Package*: `{context['items_per_pkg']:.2f}`"
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Productivity Score:* `{context['production_score']:.2f}` :dash:"
+                    },
                 ]
-                for block in production_score_blocks:
-                    blocks.append(block)
-                response_action_update = {
-                    "response_action": "update",
-                    "view": view
-                }
-                ack(response_action_update)
-        except KeyError:
-            try:
-                # open root form view
-                trigger_id = context['trigger_id']
-                app.client.views_open(
-                    trigger_id=trigger_id,
-                    view=view
-                )
-            except slackapierror as e:
-                logger.error(f'Error creating view: {e}')
+            }
+        ]
+        for block in production_score_blocks:
+            blocks.append(block)
+        response_action_update = {
+            "response_action": "update",
+            "view": view
+        }
+        ack(response_action_update)
+    else:
+        # open root form view
+        trigger_id = context['trigger_id']
+        app.client.views_open(
+            trigger_id=trigger_id,
+            view=view
+        )
 
 
 def piece_pay_calc_view(app, slackapierror, context, logger, ack=None):
@@ -674,6 +668,18 @@ def send_mistakes_view(app, slackapierror, context, logger, ack=None):
                     }
                 }
                 mistake_block.append(section_with_mistakes_block)
+
+                # mistake number context block
+                mistake_num_context_block = {
+                    "type": "context",
+                    "elements": [
+                        {
+                            "type": "plain_text",
+                            "text": f"{index + 1}",
+                        }
+                    ]
+                }
+                mistake_block.append(mistake_num_context_block)
                 mistake_block.append({"type": "divider"})
 
             channel_id = app.client.conversations_open(
