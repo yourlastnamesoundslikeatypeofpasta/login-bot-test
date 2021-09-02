@@ -616,7 +616,7 @@ def send_mistakes_view(app, slackapierror, context, logger, ack=None):
                         },
                         {
                             "type": "mrkdwn",
-                            "text": f"*Suite:*\n_<http://backoffice.myus.com/Warehouse/PackageMaint.aspx?packageId={mistake['suite']}|```{mistake['suite']} (link will be fixed in next update)```>_"
+                            "text": f"*Suite:*\n_<http://backoffice.myus.com/Warehouse/CustAccount.aspx?id={mistake['suite']}|```{mistake['suite']}```>_"
                         },
                         {
                             "type": "mrkdwn",
