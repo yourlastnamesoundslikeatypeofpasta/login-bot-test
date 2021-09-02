@@ -26,9 +26,13 @@
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project
-An alpha proof of concept Slack Bot.
+An **alpha proof of concept** Slack Bot. This alpha version uses Python's built in 
+[HTTPServer](https://docs.python.org/3/library/http.server.html) for local development. When a majority of this
+proof of concept is complete, a production version will be written using a proper framework, either Flask, or Django.
 
 ## Built With
+- Python 3.9.7
+- [Slack Bolt for Python](https://api.slack.com/tools/bolt)
 
 <!-- GETTING STARTED -->
 ## Getting Started
