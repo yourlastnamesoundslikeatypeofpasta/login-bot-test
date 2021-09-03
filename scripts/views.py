@@ -449,6 +449,15 @@ def piece_pay_calc_view(app, slackapierror, context, logger, ack=None):
             )
         except slackapierror as e:
             logger.error(f'Error creating view: {e}')
+        except KeyError:
+            # if a user selects a mistake with a value of 0
+            try:
+                app.client.views_update(
+                    view_id=context['root_view_id'],
+                    view=view
+                )
+            except slackapierror as e:
+                logger.error(f'Error creating view: {e}')
 
 
 def send_mistakes_view(app, slackapierror, context, logger, ack=None):
