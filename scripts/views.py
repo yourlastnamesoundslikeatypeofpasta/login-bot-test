@@ -69,31 +69,15 @@ def show_home_buttons_view(app, slackapierror, context, logger):
             "elements": [
                 {
                     "type": "mrkdwn",
-                    "text": ":warning:*Prototype Slack Bot*:warning:\n Link to code: <https://github.com/yourlastnamesoundslikeatypeofpasta/login-bot-test|link>",
+                    "text": ":warning:*Prototype Slack Bot*:warning:\n"
+                            " Link to code: <https://github.com/yourlastnamesoundslikeatypeofpasta/login-bot-test|link>\n"
+                            "Latest Changes: <https://github.com/yourlastnamesoundslikeatypeofpasta/login-bot-test#latest-changes|link>\n"
+                            "Known Issues: <https://github.com/yourlastnamesoundslikeatypeofpasta/login-bot-test#known-issues|link>",
                 }
             ],
         },
-        {
-            "type": "context",
-            "elements": [
-                {
-                    "type": "mrkdwn",
-                    "text": "Latest Changes: <https://github.com/yourlastnamesoundslikeatypeofpasta/login-bot-test#latest-changes|link>",
-                }
-            ],
-        },
-        {
-            "type": "context",
-            "elements": [
-                {
-                    "type": "mrkdwn",
-                    "text": "Known Issues: <https://github.com/yourlastnamesoundslikeatypeofpasta/login-bot-test#known-issues|link>",
-                }
-            ],
-        },
-
-
     ]
+
     view = {
         "type": "home",
         "blocks": blocks
