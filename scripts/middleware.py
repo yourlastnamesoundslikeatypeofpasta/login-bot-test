@@ -7,9 +7,8 @@ import openpyxl
 
 from scripts.production_score import get_production_score
 from scripts.validate_input import validate_input
-from scripts.mistakes import Mistakes
+from scripts.get_payout import get_payout
 from scripts.send_mistake_report import MistakeReport
-from pprint import pprint
 
 
 def fetch_user(payload, context, next):
@@ -24,33 +23,9 @@ def fetch_trigger_id(body, context, event, next):
     next()
 
 
-def is_points_clear_block(body, context, next):
-    try:
-        points_clear_block = body['view']['blocks'][5]
-        if points_clear_block:
-            context['is_points_clear_block'] = True
-            context['points'] = body['view']['blocks'][5]['text']['text']
-            next()
-    except IndexError:
-        context['is_points_clear_block'] = False
-        next()
-    """values_lst = []
-    package_input = body['view']['state']['values']['block_package']['package_input']['value']
-    item_input = body['view']['state']['values']['block_items']['item_input']['value']
-    weight_input = body['view']['state']['values']['block_weight']['weight_input']['value']
-    tier_input = body['view']['state']['values']['block_tier']['static_tier_selected_do_nothing_please'][
-        'selected_option']
-    values_lst.append(package_input)
-    values_lst.append(item_input)
-    values_lst.append(weight_input)
-    values_lst.append(tier_input)
-    for value in values_lst:
-        if value is None:
-            context['private_metadata'] = 'True'
-            next()
-            return
+def fetch_root_id(body, context, next):
+    context['root_view_id'] = body['view']['root_view_id']
     next()
-"""
 
 
 def calculate_production_score(view, context, next):
@@ -85,46 +60,65 @@ def calculate_production_score(view, context, next):
     next()
 
 
-def fetch_current_mistake_points(body, context, next):
-    context['mistake_points'] = body['view']['private_metadata']
-    next()
-
-
-def fetch_selected_mistake_points(body, context, next):
-    selected_mistake_points = body['view']['state']['values']['block_mistake_static_select']['action_static_mistake']['selected_option']['value']
-    if context['mistake_points']:
-        total_points = int(context['mistake_points']) + int(selected_mistake_points)
+def fetch_points(body, context, next):
+    points = body['view']['private_metadata']
+    if points == '':
+        context['points'] = '0'
     else:
-        total_points = selected_mistake_points
-
-    context['mistake_points'] = str(total_points)
+        context['points'] = points
     next()
 
 
-""" mistake_code = 
-    body['view']['state']['values']['block_mistake_static_select']['action_static_mistake']['selected_option'][
-        'value']
-
-context['root_view_id'] = body['view']['root_view_id']
-# check if a Mistakes instance exists
-if are_inputs_empty:  # todo: mistakes are not disappearing when modal is closed and reopened
-    # create one
-    mistakes = Mistakes()
-    mistakes.add_mistake(mistake_code)
-    context['mistake_points'] = mistakes.get_mistake_points()
-    pprint(Mistakes.instances)
+def clear_points(body, context, next):
+    context["points"] = "0"
+    context['points_cleared'] = True
     next()
-    return
-else:
-    # use the last instance
-    mistakes = Mistakes.instances[-1]
-mistakes.add_mistake(mistake_code)
-context['mistake_points'] = mistakes.get_mistake_points()
-next()"""
 
 
-def fetch_root_id(body, context, next):
-    context['root_view_id'] = body['view']['root_view_id']
+def add_points(body, context, next):
+    selected_mistake = \
+        body['view']['state']['values']['block_mistake_static_select']['mistake_selection']['selected_option']['value']
+    selected_mistake_point_value = int(selected_mistake.split("_")[1])
+    current_points = int(context['points'])
+    context['points'] = str(current_points + selected_mistake_point_value)
+    next()
+
+
+def calculate_payout(body, context, next):
+    # get stats
+    package_count = body['view']['state']['values']['block_package']['package_input']['value']
+    weight_count = body['view']['state']['values']['block_weight']['weight_input']['value']
+    item_count = body['view']['state']['values']['block_items']['item_input']['value']
+    tier = body['view']['state']['values']['block_tier']['static_tier_select']['selected_option']['text']['text']
+    tier_value = body['view']['state']['values']['block_tier']['static_tier_select']['selected_option']['value']
+
+    # add stats to context
+    context['package_count'] = package_count
+    context['weight_count'] = weight_count
+    context['item_count'] = item_count
+    context['tier'] = tier
+    context['tier_value'] = tier_value
+
+    # calculate payout and add to context
+    package_count = float(package_count)
+    weight_count = float(weight_count)
+    item_count = float(item_count)
+    points = int(context['points'])
+    payout = get_payout(package_count, weight_count, item_count, tier_value, points)
+    context["payout"] = payout
+    next()
+
+
+def get_tier_emoji(context, next):
+    # choose emoji according to tier
+    if context['tier_value'] == 'tier_1':
+        context['tier_emoji'] = ':baby:'
+    elif context['tier_value'] == 'tier_2':
+        context['tier_emoji'] = ':child:'
+    elif context['tier_value'] == 'tier_3':
+        context['tier_emoji'] = ':older_man:'
+    else:
+        context['tier_emoji'] = ''
     next()
 
 
@@ -218,9 +212,9 @@ def parse_file_download(body, context, next, logger):
                           for i in range(num_rows_mistake_names)
                           if sheet2.cell(row=i + 3, column=1).value == employee]
 
+        # format dates
         formatted_incident_date_lst = []
         formatted_entered_date_lst = []
-        # format dates
         for date in incident_date:
             formatted_date = date.strftime('%m/%d/%y')
             formatted_incident_date_lst.append(formatted_date)
