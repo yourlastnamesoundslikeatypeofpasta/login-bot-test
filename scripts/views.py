@@ -174,32 +174,7 @@ def show_productivity_calc_view(app, slackapierror, context, logger, ack=None):
         ack(error_response_action)
     elif "package_count" in context:
         # calculate packages view
-        production_score_blocks = [
-            {
-                "type": "section",
-                "fields": [
-                    {
-                        "type": "mrkdwn",
-                        "text": f"*Packages* :package:: `{context['package_count']:.2f}`"
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": f"*Weight* :weight_lifter:: `{context['weight_count']:.2f}`"
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": f"*Items* :shopping_trolley:: `{context['item_count']:.2f}`"
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": f"*Hours* :clock1:: `{context['hour_count']:.2f}`"
-                    },
-                ],
-            },
-            {
-                "type": "divider"
-            },
-            {
+        production_score_block = {
                 "type": "section",
                 "fields": [
                     {
@@ -220,9 +195,7 @@ def show_productivity_calc_view(app, slackapierror, context, logger, ack=None):
                     },
                 ]
             }
-        ]
-        for block in production_score_blocks:
-            blocks.append(block)
+        blocks.append(production_score_block)
         response_action_update = {
             "response_action": "update",
             "view": view
