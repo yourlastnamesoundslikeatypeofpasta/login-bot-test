@@ -54,7 +54,7 @@ proof of concept is complete, a production version will be written using a prope
 ## Latest Changes
 ### 09/03/21
 * Reworked Piece Pay calculator. It's now 100% functional.
-###09/02/21
+### 09/02/21
 * Users within private triage groups can now claim a dispute. After a dispute is claimed, "approve" and "deny" buttons will appear. 
 <!-- KNOWN ISSUES -->
 ## Known Issues
