@@ -51,7 +51,7 @@ proof of concept is complete, a production version will be written using a prope
 ## Roadmap
 
 <!-- LATEST CHANGES -->
-## Recent Changes
+## Latest Changes
 ###09/03/21
 * Reworked Piece Pay calculator. It's now 100% functional.
 ###09/02/21
