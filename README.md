@@ -14,7 +14,8 @@
       <ul>
         <li><a href="#prerequisites">Prerequisites</a></li>
         <li><a href="#installation">Installation</a></li>
-    <li><a href="#python-requirements">Python Requirements</a></li>
+        <li><a href="#python-requirements">Python Requirements</a></li>
+        <li><a href="#slack-config">Slack Config</a></li>
       </ul>
     </li>
     <li><a href="#usage">Usage</a></li>
@@ -42,6 +43,10 @@ proof of concept is complete, a production version will be written using a prope
 ### Prerequisites
 ### Python Requirements
 * [requirements.txt](https://github.com/yourlastnamesoundslikeatypeofpasta/login-bot-test/blob/main/requirements.txt)
+### Slack Config
+* [Current Settings, info, and Config](https://github.com/yourlastnamesoundslikeatypeofpasta/login-bot-test/blob/main/app_manifest.json)
+* [Scopes](https://github.com/yourlastnamesoundslikeatypeofpasta/login-bot-test/blob/main/app_manifest.json#L31)
+* [Event Subscriptions](https://github.com/yourlastnamesoundslikeatypeofpasta/login-bot-test/blob/main/app_manifest.json#L49)
 ### Installation
 
 <!-- USAGE EXAMPLES -->
