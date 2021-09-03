@@ -299,18 +299,15 @@ def piece_pay_calc_view(app, slackapierror, context, logger, ack=None):
             }
         },
         {
-            "type": "section",
+            "type": "input",
             "block_id": "block_tier",
-            "text": {
-                "type": "mrkdwn",
-                "text": "Pick a tier from the dropdown list"
-            },
-            "accessory": {
+            "element": {
                 "type": "static_select",
                 "placeholder": {
                     "type": "plain_text",
                     "text": "Select a tier",
                 },
+                "action_id": "static_tier_select",
                 "options": [
                     {
                         "text": {
@@ -355,30 +352,50 @@ def piece_pay_calc_view(app, slackapierror, context, logger, ack=None):
                         "value": "heavies"
                     }
                 ],
-                "action_id": "static_tier_selected_do_nothing_please",
+            },
+            "label": {
+                "type": "plain_text",
+                "text": "Pick a tier from the dropdown list",
+            },
+        },
+        {
+            "type": "section",
+            "block_id": "block_mistake_static_select",
+            "text": {
+                "type": "mrkdwn",
+                "text": "Pick a mistake _(optional)_:"
+            },
+            "accessory": {
+                "type": "static_select",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Select mistake",
+                },
+                "options": fetch_options(),
+                "action_id": "mistake_selection"
             }
         },
         {
             "type": "section",
-            "block_id": "block_section_w_add_mistake_button",
+            "block_id": "block_points_and_clear",
             "text": {
                 "type": "mrkdwn",
-                "text": f"*Add a mistake* _(optional)_:"
+                "text": f"Mistake Points: {str(context['points'])}"
             },
             "accessory": {
                 "type": "button",
-                "action_id": "add_mistakes_button_click",
                 "text": {
                     "type": "plain_text",
-                    "text": "Add Mistake",
+                    "text": "Clear Points",
                 },
-                "style": "danger"
+                "action_id": "clear_points"
             }
         }
     ]
+
     view = {
         "type": "modal",
-        "callback_id": "calc_piecepay_modal",
+        "callback_id": "piece_pay_calc_calculate",
         "title": {
             "type": "plain_text",
             "text": "Piece Pay Calculator"
@@ -387,7 +404,6 @@ def piece_pay_calc_view(app, slackapierror, context, logger, ack=None):
             "type": "plain_text",
             "text": "Calculate"
         },
-        "clear_on_close": True,
         "blocks": blocks
     }
     if 'error_response' in context:
@@ -397,38 +413,22 @@ def piece_pay_calc_view(app, slackapierror, context, logger, ack=None):
             ack(error_response_action)
         except slackapierror as e:
             logger.error(f'Error creating view: {e}')
-    elif 'calculate' in context and 'mistake_points' in context:
-        # calculate with clear button view
-        clear_mistake_block = {
-            "block_id": "block_clear_mistake_button",
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": " "
-            },
-            "accessory": {
-                "type": "button",
-                "text": {
-                    "type": "plain_text",
-                    "text": f"Mistake Points: {context['mistake_points']}",
-                },
-                "action_id": "clear_mistakes",
-            }
-        }
-        score_blocks = {
+    elif 'payout' in context:
+        # update view and modal with payout and points
+        score_block = {
             "type": "section",
             "fields": [
                 {
                     "type": "mrkdwn",
-                    "text": f"*Packages* :package:: `{context['package_count']:.2f}`"
+                    "text": f"*Packages* :package:: `{context['package_count']}`",
                 },
                 {
                     "type": "mrkdwn",
-                    "text": f"*Weight* :weight_lifter:: `{context['weight_count']:.2f}`"
+                    "text": f"*Weight* :weight_lifter:: `{context['weight_count']}`"
                 },
                 {
                     "type": "mrkdwn",
-                    "text": f"*Items* :shopping_trolley:: `{context['item_count']:.2f}`"
+                    "text": f"*Items* :shopping_trolley:: `{context['item_count']}`"
                 },
                 {
                     "type": "mrkdwn",
@@ -440,89 +440,35 @@ def piece_pay_calc_view(app, slackapierror, context, logger, ack=None):
                 },
             ],
         }
-        view['blocks'].append(clear_mistake_block)
-        view['blocks'].append(score_blocks)
-        try:
-            ack({
-                "response_action": "update",
-                "view": view
-            })
-        except slackapierror as e:
-            logger.error(f'Error creating view: {e}')
-    elif 'calculate' in context:
-        # calculate without clear button view
-        score_blocks = {
-            "type": "section",
-            "fields": [
-                {
-                    "type": "mrkdwn",
-                    "text": f"*Packages* :package:: `{context['package_count']:.2f}`"
-                },
-                {
-                    "type": "mrkdwn",
-                    "text": f"*Weight* :weight_lifter:: `{context['weight_count']:.2f}`"
-                },
-                {
-                    "type": "mrkdwn",
-                    "text": f"*Items* :shopping_trolley:: `{context['item_count']:.2f}`"
-                },
-                {
-                    "type": "mrkdwn",
-                    "text": f"*Tier* {context['tier_emoji']}: `{context['tier']}`"
-                },
-                {
-                    "type": "mrkdwn",
-                    "text": f"*Payout:moneybag::* `{context['payout']:.2f}`"
-                },
-            ],
+        view['private_metadata'] = context['points']
+        blocks.append(score_block)
+        response_action = {
+            "response_action": "update",
+            "view": view
         }
-        view['blocks'].append(score_blocks)
-        try:
-            ack({
-                "response_action": "update",
-                "view": view
-            })
-        except slackapierror as e:
-            logger.error(f'Error creating view: {e}')
-    elif 'mistakes_cleared' in context:
-        # clear mistake points from root view
-        try:
-            app.client.views_update(
-                view_id=context['root_view_id'],
-                view=view,
-            )
-        except slackapierror as e:
-            logger.error(f'Error creating view: {e}')
-    elif 'mistake_points' in context:
-        # add mistakes, and clear button to root view
-        clear_mistake_block = {
-            "block_id": "block_clear_mistake_button",
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"Mistake Points: {context['mistake_points']}"
-            },
-            "accessory": {
-                "type": "button",
-                "text": {
-                    "type": "plain_text",
-                    "text": "Clear Mistakes",
-                },
-                "action_id": "clear_mistakes",
-            }
-        }
-        view['blocks'].append(clear_mistake_block)
-        try:
-            app.client.views_update(
-                view_id=context['root_view_id'],
-                view=view,
-            )
-        except slackapierror as e:
-            logger.error(f'Error creating view: {e}')
+        ack = context['ack']
+        ack(response_action)
+    elif int(context['points']) > 0:
+        # update private_metadata
+        view["private_metadata"] = context['points']
+
+        # update view
+        app.client.views_update(
+            view_id=context['root_view_id'],
+            view=view
+        )
+    elif 'points_cleared' in context:
+        # update private metadata
+        view["private_metadata"] = context['points']
+
+        # update view
+        app.client.views_update(
+            view_id=context['root_view_id'],
+            view=view
+        )
     else:
         try:
             # open root view
-            print('home')
             trigger_id = context['trigger_id']
             app.client.views_open(
                 trigger_id=trigger_id,
@@ -530,52 +476,6 @@ def piece_pay_calc_view(app, slackapierror, context, logger, ack=None):
             )
         except slackapierror as e:
             logger.error(f'Error creating view: {e}')
-
-
-def mistake_selection_view(app, slackapierror, context, logger, ack=None):
-    blocks = [{
-        "type": "input",
-        "block_id": "block_mistake_static_select",
-        "label": {
-            "type": "plain_text",
-            "text": "Select Mistake",
-        },
-        "element": {
-            "type": "static_select",
-            "placeholder": {
-                "type": "plain_text",
-                "text": "Select Mistake..."
-            },
-            "action_id": "action_static_mistake",
-            "options": fetch_options()
-        }
-    }]
-    view = {
-        "type": "modal",
-        "callback_id": "root_view_plus_mistake_points_view",
-        "title": {
-            "type": "plain_text",
-            "text": "Select Mistakes"
-        },
-        "submit": {
-            "type": "plain_text",
-            "text": "Add Mistakes",
-        },
-        "close": {
-            "type": "plain_text",
-            "text": "Close",
-        },
-        "blocks": blocks
-    }
-    if context['is_points_clear_block']:
-        view['private_metadata'] = context['points']
-    try:
-        app.client.views_push(
-            trigger_id=context['trigger_id'],
-            view=view
-        )
-    except slackapierror as e:
-        logger.error(e)
 
 
 def send_mistakes_view(app, slackapierror, context, logger, ack=None):
