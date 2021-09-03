@@ -66,7 +66,7 @@ def productivity_score_calculator_update_root_view(ack, context, logger):
 
 # #########################################Piece Pay Calculator Modal###################################################
 # root view
-@app.action("piece_pay_home_button", middleware=[fetch_trigger_id, fetch_root_id])
+@app.action("piece_pay_home_button", middleware=[fetch_trigger_id, fetch_root_id, fetch_points])
 def piece_pay_calc_root_view(ack, context, logger):
     """
     Open piece pay calculator when "Piece Pay Calculator" is clicked
@@ -81,96 +81,22 @@ def piece_pay_calc_root_view(ack, context, logger):
     piece_pay_calc_view(app, SlackApiError, context, logger)
 
 
-# tier menu select action
-# tier menu select requires a 200 response when an item is selected. idk y this is required # todo: change to sectionless static view
-@app.action("static_tier_selected_do_nothing_please")
-def shout_200_to_the_slack_gods(ack):
+@app.action("mistake_selection", middleware=[fetch_root_id, fetch_points, add_points])
+def piece_pay_calc_add_mistake_block(ack, context, logger):
     ack()
+    piece_pay_calc_view(app, SlackApiError, context, logger, ack=ack)
 
 
-# mistake selection view
-@app.action('add_mistakes_button_click', middleware=[fetch_trigger_id, is_points_clear_block])
-def open_mistake_view(ack, body, context, logger):
+@app.action("clear_points", middleware=[fetch_root_id, fetch_points, clear_points])
+def remove_mistake_block(ack, context, logger):
     ack()
-    mistake_selection_view(app, SlackApiError, context, logger)
+    piece_pay_calc_view(app, SlackApiError, context, logger)
 
 
-# update root view with mistake submission from mistake selection view
-@app.view('root_view_plus_mistake_points_view', middleware=[fetch_trigger_id, fetch_root_id,
-                                                            fetch_current_mistake_points, fetch_selected_mistake_points])
-def root_with_mistakes_view(ack, body, context, logger):
+@app.view("piece_pay_calc_calculate", middleware=[fetch_points, calculate_payout, get_tier_emoji])
+def piece_pay_calc_show_results_view(ack, context, logger):
     ack()
-    piece_pay_calc_view(app, body, context, logger, ack=ack)
-
-
-# update root view mistake point label
-@app.action("clear_mistakes")
-def clear_mistake_points_from_root_view(ack, body, context, logger, view, payload):
-    ack()
-    piece_pay_calc.mistake.remove_all_mistakes()
-    context['mistake_points'] = piece_pay_calc.mistake.get_mistake_points()
-    context['mistakes_cleared'] = True
-    context['calculate'] = False
-    piece_pay_calc_view(ack, body, context, logger, view)
-
-
-@app.view("calc_piecepay_modal")
-def get_stats_update_calc_piecepay_modal(ack, view, context, payload, body, logger):
-    """
-    Updated piece pay calculator modal
-    :param ack: slack obj
-    :param view: slack obj
-    :param body: slack obj
-    :return: None
-    """
-    ack()
-    context['mistakes_cleared'] = False
-    context['calculate'] = True
-    context['mistake_points'] = piece_pay_calc.mistake.get_mistake_points()
-    block_input_values = {
-        "block_package": view['state']['values']['block_package']['package_input']['value'].strip(' '),
-        "block_weight": view['state']['values']['block_weight']['weight_input']['value'].strip(' '),
-        "block_items": view['state']['values']['block_items']['item_input']['value'].strip(' '),
-    }
-    error_response_action = validate_input(block_input_values)
-    if error_response_action:
-        ack(error_response_action)
-        return
-
-    try:
-        context['package_count'] = float(block_input_values['block_package'])
-        context['weight_count'] = float(block_input_values['block_weight'])
-        context['item_count'] = float(block_input_values['block_items'])
-        context['tier'] = view['state']['values']['block_tier']['static_select-action']['selected_option']['text'][
-            'text']
-        context['tier_value'] = view['state']['values']['block_tier']['static_select-action']['selected_option'][
-            'value']
-        try:
-            context['payout'] = get_payout(context['package_count'],
-                                           context['weight_count'],
-                                           context['item_count'],
-                                           context['tier_value'],
-                                           mistake_points=context['mistake_points'])
-        except KeyError:
-            context['payout'] = get_payout(context['package_count'],
-                                           context['weight_count'],
-                                           context['item_count'],
-                                           context['tier_value'])
-    except (SlackApiError, ValueError) as e:
-        print(e)
-        logger.info(e)
-
-    # pick age emoji :)
-    if context['tier_value'] == 'tier_1':
-        context['tier_emoji'] = ':baby:'
-    elif context['tier_value'] == 'tier_2':
-        context['tier_emoji'] = ':child:'
-    elif context['tier_value'] == 'tier_3':
-        context['tier_emoji'] = ':older_man:'
-    else:
-        context['tier_emoji'] = ''
-
-    piece_pay_calc_view(ack, body, context, logger, view)
+    piece_pay_calc_view(app, SlackApiError, context, logger)
 
 
 # #########################################Appeal Mistake Modal#########################################################
