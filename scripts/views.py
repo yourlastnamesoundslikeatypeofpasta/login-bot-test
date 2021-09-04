@@ -464,50 +464,50 @@ def piece_pay_calc_view(app, slackapierror, context, logger, ack=None):
 
 
 def send_mistakes_view(app, slackapierror, context, logger, ack=None):
-    if 'employee_mistake_dict' in context:
+    if 'mistake_report_dict' in context:
         # build mistake section blocks and add approve/deny buttons
-        for mistake_report in context['employee_mistake_dict']:  # todo: dont forgot to remove slice
+        for employee, mistake_lst in context['mistake_report_dict'].items():  # todo: dont forgot to remove slice
             mistake_block = [
                 {
                     "type": "header",
                     "block_id": "header_block",
                     "text": {
                         "type": "plain_text",
-                        "text": f"{mistake_report['employee_name']} Mistake Report [[DATE-DATE] PLACEHOLDER]",
+                        "text": f"{employee} Mistake Report [[DATE-DATE] PLACEHOLDER]",
                     }
                 },
                 {
                     "type": "divider"
                 }
             ]
-            for index, mistake in enumerate(mistake_report['employee_mistakes']):
+            for index, mistake in enumerate(mistake_lst):
                 section_with_mistakes_block = {
                     "type": "section",
                     "block_id": f"block_mistake_body_{index}",
                     "fields": [
                         {
                             "type": "mrkdwn",
-                            "text": f"*Entered Date:*\n```{mistake['entered_date']}```"
+                            "text": f"*Entered Date:*\n{mistake['entered_date']}"
                         },
                         {
                             "type": "mrkdwn",
-                            "text": f"*Incident Date:*\n```{mistake['incident_date']}```"
+                            "text": f"*Incident Date:*\n{mistake['incident_date']}"
                         },
                         {
                             "type": "mrkdwn",
-                            "text": f"*Suite:*\n_<http://backoffice.myus.com/Warehouse/CustAccount.aspx?id={mistake['suite']}|```{mistake['suite']}```>_"
+                            "text": f"*Suite:*\n_<http://backoffice.myus.com/Warehouse/CustAccount.aspx?id={mistake['suite']}|{mistake['suite']}>_"
                         },
                         {
                             "type": "mrkdwn",
-                            "text": f"*Package ID:*\n_<http://backoffice.myus.com/Warehouse/PackageMaint.aspx?packageId={mistake['pkg_id']}|```{mistake['pkg_id']}```>_"
+                            "text": f"*Package ID:*\n_<http://backoffice.myus.com/Warehouse/PackageMaint.aspx?packageId={mistake['pkg_id']}|{mistake['pkg_id']}>_"
                         },
                         {
                             "type": "mrkdwn",
-                            "text": f"*Mistake Code:*\n```{mistake['mistake_type']}```"
+                            "text": f"*Mistake Code:*\n{mistake['mistake_type']}"
                         },
                         {
                             "type": "mrkdwn",
-                            "text": f"*Incident Notes:*\n```{mistake['incident_notes']}```"
+                            "text": f"*Incident Notes:*\n{mistake['incident_notes']}"
                         },
                     ],
                     "accessory": {
