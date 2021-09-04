@@ -1,7 +1,3 @@
-import time
-from pprint import pprint
-import os
-
 from scripts.fetch_options import fetch_options
 
 
@@ -219,9 +215,7 @@ def piece_pay_calc_view(app, slackapierror, context, logger, ack=None):
     :param context:
     :param app:
     :param slackapierror:
-    :param mistake:
     :param ack: slack obj
-    :param body: slack obj
     :param logger: slack obj
     :return: None
     """
@@ -466,7 +460,7 @@ def piece_pay_calc_view(app, slackapierror, context, logger, ack=None):
 def send_mistakes_view(app, slackapierror, context, logger, ack=None):
     if 'mistake_report_dict' in context:
         # build mistake section blocks and add approve/deny buttons
-        for employee, mistake_lst in context['mistake_report_dict'].items():  # todo: dont forgot to remove slice
+        for employee, mistake_lst in context['mistake_report_dict'].items():
             mistake_block = [
                 {
                     "type": "header",
