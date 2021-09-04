@@ -320,10 +320,10 @@ def say_hello(message, say):
     say(f'{greeting} <@{user}>!✌')
 
 
-# this event will ignore file_shared subtype
+# only acknowledge strings
 @app.event("message",
-           matchers=[lambda message: message.get('subtype') == 'file_shared'])
-def handle(ack, body, event, logger):
+           matchers=[lambda message: message.get('text') != ''])
+def handle_message(ack, body, event, message, logger):
     ack()
 
 
@@ -335,9 +335,9 @@ def acknowledge_file_shared(ack, body, context, logger):
 
 # acknowledge file_shared subtype
 @app.event('message',
-           matchers=[lambda message: message.get('subtype') != 'file_shared'],
+           matchers=[lambda message: message.get('subtype') == 'file_share'],
            middleware=[download_file_shared])
-def acknowledge_file_shared(ack, event, context, logger):
+def acknowledge_file_shared(ack, event, message, context, logger):
     ack()
     channel = event['channel']
     user = event['user']
