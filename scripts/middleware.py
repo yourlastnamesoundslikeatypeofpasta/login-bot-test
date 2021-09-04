@@ -123,14 +123,11 @@ def get_tier_emoji(context, next):
     next()
 
 
-def download_file_shared(body, context, event, next, logger):
-    # import is here because if added at the top, it breaks other middleware funcs, not sure why
-    # todo: find out why import app from main breaks other funcs
-    from main import app
-
+def download_file_shared(body, context, event, message, next, logger):
     # get file info
+    client = context['client']
     file_id = body['event']['files'][0]['id']
-    info = app.client.files_info(file=file_id)
+    info = client.files_info(file=file_id)
     file_name = info['file']['name']
     file_download_link = info['file']['url_private_download']
 
@@ -161,16 +158,15 @@ def parse_file_download(body, context, next, logger):
     mistake_report_file = file_download_path
     wb = openpyxl.load_workbook(mistake_report_file)
     wb_sheet_lst = wb.sheetnames
-    sheet_2 = wb[wb_sheet_lst[1]]
+    sheet = wb[wb_sheet_lst[1]]
     wb.close()
 
-    # number of rows with mistakes
-    num_rows_w_mistakes = sheet_2.max_row
-
     # create a list of dicts with lists for each column associated  with the employee
+    num_rows_w_mistakes = sheet.max_row
     mistake_report = {}
-    for row in list(sheet_2.iter_rows(3, num_rows_w_mistakes)):
+    for row in list(sheet.iter_rows(3, num_rows_w_mistakes)):
         mistake = {}
+        employee = None
         for cell in row:
             if cell.column_letter == 'A':
                 employee = cell.value
