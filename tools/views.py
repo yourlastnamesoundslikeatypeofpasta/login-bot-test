@@ -1,75 +1,7 @@
 from tools.fetch_options import fetch_options
 
 
-def show_home_buttons_view(app, slackapierror, context, logger):
-    user = context["user"]
-    blocks = [
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"*Welcome home, <@{user}> :house:*",
-            },
-        },
-        {"type": "divider"},
-        {
-            "type": "header",
-            "text": {
-                "type": "plain_text",
-                "text": "Calculators :abacus:",
-                "emoji": True
-            }
-        },
-        {
-            "type": "actions",
-            "elements": [
-                {
-                    "type": "button",
-                    "text": {
-                        "type": "plain_text",
-                        "text": "Productivity Score Calculator"
-                    },
-                    "action_id": "productivity_score_calculator_button_click"
-                },
-                {
-                    "type": "button",
-                    "text": {
-                        "type": "plain_text",
-                        "text": "Piece Pay Calculator"
-                    },
-                    "action_id": "piece_pay_home_button"
-                }
-            ]
-        },
-        {
-            "type": "divider"
-        },
-        {"type": "divider"},
-        {
-            "type": "context",
-            "elements": [
-                {
-                    "type": "mrkdwn",
-                    "text": ":warning:*Prototype Slack Bot*:warning:\n"
-                            " Link to code: <https://github.com/yourlastnamesoundslikeatypeofpasta/login-bot-test|link>\n"
-                            "Latest Changes: <https://github.com/yourlastnamesoundslikeatypeofpasta/login-bot-test#latest-changes|link>\n"
-                            "Known Issues: <https://github.com/yourlastnamesoundslikeatypeofpasta/login-bot-test#known-issues|link>",
-                }
-            ],
-        },
-    ]
 
-    view = {
-        "type": "home",
-        "blocks": blocks
-    }
-    try:
-        app.client.views_publish(
-            user_id=user,
-            view=view
-        )
-    except slackapierror as e:
-        logger.error(f"Error publishing home tab: {e}")
 
 
 def show_productivity_calc_view(app, slackapierror, context, logger, ack=None):
