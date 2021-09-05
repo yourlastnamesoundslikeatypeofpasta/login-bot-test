@@ -1,6 +1,5 @@
 venv/
 .idea/
-resources/downloads
-slack.db
+resources/
 
 
