@@ -312,7 +312,7 @@ def appeal_mistake_modal(ack, view, body):
 
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@Message Reacts@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@app.message(re.compile("(hi|hello|hey|yo)"))
+@app.message(re.compile("\b(hi|hello|hey|yo)\b"))
 def say_hello(message, say):
     greeting_lst = ['hello', 'hi', 'whats up', 'yo']
     greeting = random.choice(greeting_lst)
