@@ -44,20 +44,6 @@ def show_home_buttons_view(app, slackapierror, context, logger):
         {
             "type": "divider"
         },
-        {
-            "type": "actions",
-            "elements": [
-                {
-                    "type": "button",
-                    "text": {
-                        "type": "plain_text",
-                        "text": "Appeal Mistake (under dev)",
-                        "emoji": True
-                    },
-                    "action_id": "appeal_mistake_button_click"
-                }
-            ]
-        },
         {"type": "divider"},
         {
             "type": "context",
