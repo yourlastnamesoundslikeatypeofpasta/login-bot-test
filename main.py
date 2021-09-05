@@ -1,22 +1,45 @@
+import logging
 import os
-import sqlite3
-from pprint import pprint
-import re
 import random
+import re
 
 from slack_bolt import App
 from slack_sdk.errors import SlackApiError
 
-from scripts.command_score import bonus_score
-from scripts.command_score import find_stats
-from scripts.get_payout import get_payout
-from scripts.get_error_msg_str import get_error_msg_str
-from scripts.views import *
-from scripts.middleware import *
+from tools.get_error_msg_str import get_error_msg_str
+from tools.middleware import add_points
+from tools.middleware import calculate_payout
+from tools.middleware import calculate_production_score
+from tools.middleware import clear_points
+from tools.middleware import download_file_shared
+from tools.middleware import fetch_points
+from tools.middleware import fetch_root_id
+from tools.middleware import fetch_trigger_id
+from tools.middleware import fetch_user
+from tools.middleware import get_tier_emoji
+from tools.middleware import parse_file_download
+from tools.slsh_cmd_bonus_funcs import find_stats, bonus_score
+from tools.views import piece_pay_calc_view
+from tools.views import send_mistakes_view
+from tools.views import show_home_buttons_view
+from tools.views import show_productivity_calc_view
 
 # start Slack app
 app = App(token=os.environ['bot_token'], signing_secret=os.environ['signin_secret'])
 BOT_ID = app.client.auth_test()['user_id']
+logging.basicConfig(level=logging.DEBUG)
+
+
+@app.middleware
+def log_request(logger, body, next):
+    logger.debug(body)
+    return next()
+
+
+@app.error
+def global_error_handler(error, body, logger):
+    logger.exception(error)
+    logger.info(body)
 
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@Slack App Modals and Views@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -339,7 +362,7 @@ def acknowledge_file_shared(ack, body, context, logger):
                lambda message: message['files'][0]['filetype'] == 'xlsx',  # only match xlsx file types
                lambda message: message.get("subtype") != "bot_message"],  # ignore bot messages
            middleware=[download_file_shared])
-def acknowledge_file_shared(ack, event, respond, message, context, logger):
+def acknowledge_file_shared(ack, event, message, logger):
     ack()
     channel = event['channel']
     user = event['user']
@@ -412,7 +435,7 @@ def acknowledge_file_shared(ack, event, respond, message, context, logger):
             result = app.client.chat_postMessage(channel=channel,
                                                  user=user,
                                                  blocks=blocks,
-                                                 text='Send Mistake Report',
+                                                 text='Send Mistake Report?',
                                                  thread_ts=ts
                                                  )
         except SlackApiError as e:
@@ -420,7 +443,7 @@ def acknowledge_file_shared(ack, event, respond, message, context, logger):
 
 
 @app.action('send_mistakes', middleware=[parse_file_download])
-def send_mistakes(ack, context, body, respond, payload, logger):
+def send_mistakes(ack, context, respond, logger):
     ack()
     respond(':inbox_tray: Sending mistakes')
     send_mistakes_view(app, SlackApiError, context, logger)
