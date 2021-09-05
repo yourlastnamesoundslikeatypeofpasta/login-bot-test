@@ -1,6 +1,6 @@
 from app import app
 from slack_sdk.errors import SlackApiError
-from apps.global_middleware import fetch_user
+from apps.global_middleware import fetch_user_id
 
 
 def create_blocks(context, next):
@@ -85,9 +85,8 @@ def create_context_blocks(context, next):
     next()
 
 
-@app.event("app_home_opened", middleware=[fetch_user, create_blocks,
-                                          create_welcome_home_blocks, create_calculator_blocks,
-                                          create_context_blocks])
+@app.event("app_home_opened", middleware=[fetch_user_id, create_blocks, create_welcome_home_blocks,
+                                          create_calculator_blocks, create_context_blocks])
 def open_app_home_view(context, logger):
     """
     Show home view
