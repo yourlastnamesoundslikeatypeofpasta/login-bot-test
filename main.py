@@ -22,6 +22,10 @@ from tools.views import send_mistakes_view
 from tools.views import show_home_buttons_view
 from tools.views import show_productivity_calc_view
 
+# external app imports (not explicitly called but need to be imported)
+from apps.reacts.say_hello import say_hello
+from apps.reacts.ack_message import ack_message
+
 BOT_ID = app.client.auth_test()['user_id']
 
 
@@ -115,22 +119,6 @@ def remove_mistake_block(ack, context, logger):
 def piece_pay_calc_show_results_view(ack, context, logger):
     ack()
     piece_pay_calc_view(app, SlackApiError, context, logger)
-
-
-# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@Message Reacts@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@app.message(re.compile(r"^\b(hi|hello|hey|yo)\b$"))
-def say_hello(message, say):
-    greeting_lst = ['hello', 'hi', 'whats up', 'yo']
-    greeting = random.choice(greeting_lst)
-    user = message['user']
-    say(f'{greeting} <@{user}>!✌')
-
-
-# only acknowledge strings
-@app.event("message",
-           matchers=[lambda message: message.get('text') != ''])
-def handle_message(ack, body, event, message, logger):
-    ack()
 
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@Send Mistake Reports Listeners@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
