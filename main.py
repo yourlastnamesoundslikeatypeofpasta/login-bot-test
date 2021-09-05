@@ -13,18 +13,17 @@ from tools.middleware import download_file_shared
 from tools.middleware import fetch_points
 from tools.middleware import fetch_root_id
 from tools.middleware import fetch_trigger_id
-from tools.middleware import fetch_user
 from tools.middleware import get_tier_emoji
 from tools.middleware import parse_file_download
 from tools.slsh_cmd_bonus_funcs import find_stats, bonus_score
 from tools.views import piece_pay_calc_view
 from tools.views import send_mistakes_view
-from tools.views import show_home_buttons_view
 from tools.views import show_productivity_calc_view
 
 # external app imports (not explicitly called but need to be imported)
-from apps.reacts.say_hello import say_hello
-from apps.reacts.ack_message import ack_message
+from apps.reacts.say_hello import say_hello  # noqa
+from apps.reacts.ack_message import ack_message  # noqa
+from apps.app_home_view import app_home_root_view  # noqa
 
 BOT_ID = app.client.auth_test()['user_id']
 
@@ -42,18 +41,6 @@ def global_error_handler(error, body, logger):
 
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@Slack App Modals and Views@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-# ##############################################Home View###############################################################
-@app.event("app_home_opened", middleware=[fetch_user])
-def app_home_root_view(context, logger):
-    """
-    Show home buttons
-    :param context:
-    :param logger: logger
-    :return: None
-    """
-    show_home_buttons_view(app, SlackApiError, context, logger)
-
 
 # ######################################Productivity Score Calculator Modal#############################################
 # root view
