@@ -335,9 +335,11 @@ def acknowledge_file_shared(ack, body, context, logger):
 
 # acknowledge file_shared subtype
 @app.event('message',
-           matchers=[lambda message: message.get('subtype') == 'file_share'],
+           matchers=[
+               lambda message: message['files'][0]['filetype'] == 'xlsx',  # only match xlsx file types
+               lambda message: message.get("subtype") != "bot_message"],  # ignore bot messages
            middleware=[download_file_shared])
-def acknowledge_file_shared(ack, event, message, context, logger):
+def acknowledge_file_shared(ack, event, respond, message, context, logger):
     ack()
     channel = event['channel']
     user = event['user']
@@ -346,36 +348,83 @@ def acknowledge_file_shared(ack, event, message, context, logger):
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "⚠Prototype: Please send mistakes to yourself⚠\nFinal version will send mistakes to individuals"
-            },
-            "accessory": {
-                "type": "users_select",
-                "placeholder": {
-                    "type": "plain_text",
-                    "text": "Select a user",
-                },
-                "action_id": "users_select-action"
+                "text": "*Mistake Report Date Range:*"
             }
-        }
+        },
+        {
+            "type": "actions",
+            "elements": [
+                {
+                    "type": "datepicker",
+                    "placeholder": {
+                        "type": "plain_text",
+                        "text": "Start",
+                    },
+                    "action_id": "start_date_selected"
+                },
+                {
+                    "type": "datepicker",
+                    "placeholder": {
+                        "type": "plain_text",
+                        "text": "End",
+                    },
+                    "action_id": "end_date_selected"
+                }
+            ]
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "⚠Caution: Pressing send will send all mistake reports to you ⚠\nThe final version will send mistakes to individual employees"
+            }
+        },
+        {
+            "type": "actions",
+            "elements": [
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "Send",
+                    },
+                    "style": "primary",
+                    "value": "send_mistakes",
+                    "action_id": "send_mistakes"
+                },
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "Cancel",
+                    },
+                    "style": "danger",
+                    "value": "cancel_mistakes",
+                    "action_id": "cancel_mistakes"
+                }
+            ]
+        },
     ]
+    ts = message['ts']
+
     if user != BOT_ID:
-        app.client.chat_postEphemeral(channel=channel,
-                                      user=user,
-                                      blocks=blocks,
-                                      text='Send Mistake Report')
+        try:
+            result = app.client.chat_postMessage(channel=channel,
+                                                 user=user,
+                                                 blocks=blocks,
+                                                 text='Send Mistake Report',
+                                                 thread_ts=ts
+                                                 )
+        except SlackApiError as e:
+            logger.error()
 
 
-@app.action('users_select-action', middleware=[parse_file_download])
-# @app.action('users_select-action')
+@app.action('send_mistakes', middleware=[parse_file_download])
 def send_mistakes(ack, context, body, respond, payload, logger):
     ack()
-    # pprint(body)
-    # print(MistakeReport.instances[-1])
-    context['channel_id'] = body['channel']['id']
-    respond('Sending Mistakes...')
-    context['selected_user'] = body['actions'][0]['selected_user']
-    # pprint(context)
+    respond(':inbox_tray: Sending mistakes')
     send_mistakes_view(app, SlackApiError, context, logger)
+    respond(':white_check_mark: All done!')
 
 
 # appeal mistake view
