@@ -32,7 +32,7 @@
 ## About The Project
 An **alpha, proof of concept**, Slack Bot. This alpha version uses Python's built in 
 [HTTPServer](https://docs.python.org/3/library/http.server.html) for local development. When a majority of this
-proof of concept is complete, a production version will be written using a proper framework, either Flask, or Django.
+proof of concept is complete, a test driven, asynchronous, production version will be written using a proper framework, either Flask or Django.
 
 ### Built With
 * Python 3.9.7
@@ -44,7 +44,7 @@ proof of concept is complete, a production version will be written using a prope
 ### Python Requirements
 * [requirements.txt](https://github.com/yourlastnamesoundslikeatypeofpasta/login-bot-test/blob/main/requirements.txt)
 ### Slack Config
-* [Current Settings, info, and Config](https://github.com/yourlastnamesoundslikeatypeofpasta/login-bot-test/blob/main/app_manifest.json)
+* [Current settings, info, and config](https://github.com/yourlastnamesoundslikeatypeofpasta/login-bot-test/blob/main/app_manifest.json)
 * [Scopes](https://github.com/yourlastnamesoundslikeatypeofpasta/login-bot-test/blob/main/app_manifest.json#L31)
 * [Event Subscriptions](https://github.com/yourlastnamesoundslikeatypeofpasta/login-bot-test/blob/main/app_manifest.json#L49)
 ### Installation
