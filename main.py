@@ -3,7 +3,7 @@ import os
 import random
 import re
 
-from slack_bolt import App
+from app import app
 from slack_sdk.errors import SlackApiError
 
 from tools.get_error_msg_str import get_error_msg_str
@@ -24,15 +24,12 @@ from tools.views import send_mistakes_view
 from tools.views import show_home_buttons_view
 from tools.views import show_productivity_calc_view
 
-# start Slack app
-app = App(token=os.environ['bot_token'], signing_secret=os.environ['signin_secret'])
 BOT_ID = app.client.auth_test()['user_id']
-logging.basicConfig(level=logging.DEBUG)
 
 
 @app.middleware
 def log_request(logger, body, next):
-    logger.debug(body)
+    logger.info(body)
     return next()
 
 
@@ -335,7 +332,7 @@ def appeal_mistake_modal(ack, view, body):
 
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@Message Reacts@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@app.message(re.compile("\b(hi|hello|hey|yo)\b"))
+@app.message(re.compile(r"^\b(hi|hello|hey|yo)\b$"))
 def say_hello(message, say):
     greeting_lst = ['hello', 'hi', 'whats up', 'yo']
     greeting = random.choice(greeting_lst)
