@@ -4,7 +4,6 @@ import re
 from app import app
 from slack_sdk.errors import SlackApiError
 
-from tools.get_error_msg_str import get_error_msg_str
 from tools.middleware import add_points
 from tools.middleware import calculate_payout
 from tools.middleware import calculate_production_score
@@ -15,15 +14,15 @@ from tools.middleware import fetch_root_id
 from tools.middleware import fetch_trigger_id
 from tools.middleware import get_tier_emoji
 from tools.middleware import parse_file_download
-from tools.slsh_cmd_bonus_funcs import find_stats, bonus_score
 from tools.views import piece_pay_calc_view
 from tools.views import send_mistakes_view
 from tools.views import show_productivity_calc_view
 
 # external app imports (not explicitly called but need to be imported)
-from apps.reacts.say_hello import say_hello  # noqa
-from apps.reacts.ack_message import ack_message  # noqa
-from apps.app_home_view import app_home_root_view  # noqa
+from apps.msg_responses.react_hello import say_hello  # noqa
+from apps.msg_responses.ack_message import ack_message  # noqa
+from apps.app_home_view import open_app_home_view  # noqa
+from apps.slash_cmds.slash_cmd_bonus import bonus  # noqa
 
 BOT_ID = app.client.auth_test()['user_id']
 
@@ -594,48 +593,6 @@ def edit_message_and_notify_employee_of_denial(ack, body, context, respond, logg
 @app.event("file_created")
 def acknowledge_file_created(ack, event, logger):
     ack()
-
-
-# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@Slash Commands@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@app.command('/bonus')
-def bonus(ack, respond, command):
-    """
-    Slash command that calculates logger bonus.
-    :input int, 4, each int is a statistic
-    :output str, formatted bonus report
-    :param ack: Something something server acknowledge thingy
-    :param respond: slack respond func
-    :param command: dict, payload
-    :return: None
-    """
-
-    ack()
-    command_name = 'bonus'
-    user = command['user_id']
-
-    try:
-        text = command['text']
-    except KeyError:  # if the user enters whitespace
-        respond(get_error_msg_str(command_name))
-        return
-
-    # if a user needs help using the slack command
-    if text.strip(' ') == 'help':
-        respond(
-            'Enter stats in this format (with spaces in between each stat): `/bonus [pkgs] [lbs] [items] [hours]`\n example: `/bonus 100 200 175 5`')
-        return
-
-    # print out stat report
-    stat_dict = find_stats(text)
-    if stat_dict:
-        logger_bonus_score = bonus_score(stat_dict)
-        pkg_per_hour = stat_dict['packages'] / stat_dict['hours']
-        lbs_per_pkg = stat_dict['lbs'] / stat_dict['packages']
-        items_per_pkg = stat_dict['items'] / stat_dict['packages']
-        respond(
-            f'<@{user}>\n- Packages :package:: `{stat_dict["packages"]}`\n- Lbs :weight_lifter:: `{stat_dict["lbs"]}`\n- Items :shopping_trolley:: `{stat_dict["items"]}`\n- Hours :clock1:: `{stat_dict["hours"]}`\n\n- Pkg/Hour: `{pkg_per_hour}`\n- Lbs/Pkg: `{lbs_per_pkg}`\n- Items/Pkg: `{items_per_pkg}`\n\n- Estimated Productivity Score: `{logger_bonus_score:.2f}` :dash:')
-    else:
-        respond(get_error_msg_str(command_name))
 
 
 if __name__ == '__main__':
