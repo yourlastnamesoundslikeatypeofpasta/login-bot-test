@@ -62,7 +62,7 @@ def generate_response(context, next):
                     },
                     {
                         "type": "mrkdwn",
-                        "text": f"* Lbs :weight_lifter:: `{stats['lbs']:.0f}`",
+                        "text": f"* Lbs :weight_lifter:: `{stats['weight']:.0f}`",
                     },
                     {
                         "type": "mrkdwn",
@@ -78,7 +78,7 @@ def generate_response(context, next):
                     },
                     {
                         "type": "mrkdwn",
-                        "text": f"* Lbs/Pkg: `{stats['lbs_per_pkg']:.2f}`",
+                        "text": f"* Lbs/Pkg: `{stats['weight_per_pkg']:.2f}`",
                     },
                     {
                         "type": "mrkdwn",
