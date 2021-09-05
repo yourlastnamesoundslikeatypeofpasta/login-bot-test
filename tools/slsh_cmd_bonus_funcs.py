@@ -31,4 +31,4 @@ def find_stats(bare_text):
                      'lbs': text_lst[1],
                      'items': text_lst[2],
                      'hours': text_lst[3]}
-    return stat_dict
+        return stat_dict

@@ -1,7 +1,7 @@
 import os
 import sqlite3
 
-from scripts.initial_values import *
+from tools.initial_values import *
 
 
 def create_db():

@@ -1,10 +1,9 @@
-from scripts.fetch_options import fetch_options
+from tools.fetch_options import fetch_options
 
 
 def show_home_buttons_view(app, slackapierror, context, logger):
     user = context["user"]
     blocks = [
-
         {
             "type": "section",
             "text": {

@@ -5,10 +5,10 @@ import datetime
 import requests
 import openpyxl
 
-from scripts.production_score import get_production_score
-from scripts.validate_input import validate_input
-from scripts.get_payout import get_payout
-from scripts.send_mistake_report import MistakeReport
+from tools.production_score import get_production_score
+from tools.validate_input import validate_input
+from tools.get_payout import get_payout
+from tools.send_mistake_report import MistakeReport
 
 
 def fetch_user(payload, context, next):
@@ -136,8 +136,8 @@ def download_file_shared(body, context, event, message, next, logger):
     headers = {
         'Authorization': f"Bearer {token}"}  # token in headers is needed to download private files from the workspace
     r = requests.get(url=file_download_link, headers=headers)
-    file_downloads_dir = os.path.join('resources', 'downloads')
-    file_download_path = os.path.join('resources', 'downloads', file_name)
+    file_downloads_dir = os.path.join('data')
+    file_download_path = os.path.join('data', file_name)
     if not os.path.exists(file_downloads_dir):
         os.makedirs(file_download_path)
 

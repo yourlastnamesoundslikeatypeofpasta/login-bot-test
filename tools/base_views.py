@@ -1,4 +1,4 @@
-from scripts.fetch_options import fetch_options
+from tools.fetch_options import fetch_options
 
 
 def home_base_view(event):
