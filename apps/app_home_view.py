@@ -44,7 +44,7 @@ def create_calculator_blocks(context, next):
                         "type": "plain_text",
                         "text": "Productivity Score Calculator"
                     },
-                    "action_id": "productivity_score_calculator_button_click"
+                    "action_id": "production_calc_button_click"
                 },
                 {
                     "type": "button",
