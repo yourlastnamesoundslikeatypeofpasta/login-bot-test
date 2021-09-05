@@ -562,7 +562,7 @@ def send_mistakes_view(app, slackapierror, context, logger, ack=None):
                 mistake_block.append({"type": "divider"})
 
             channel_id = app.client.conversations_open(
-                users=context['selected_user']
+                users=context['user_id']
             )['channel']['id']
             try:
                 app.client.chat_postMessage(
