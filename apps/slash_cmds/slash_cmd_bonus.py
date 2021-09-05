@@ -1,6 +1,7 @@
 from app import app
 
 from apps.global_middleware import fetch_user_id
+from apps.global_middleware import calculate_production_score
 
 
 def parse_args(context, command, next):
@@ -18,15 +19,15 @@ def parse_args(context, command, next):
         len_split_text = len(text.split(' '))
         if len_split_text == 4:
             try:
-                text_lst = [float(i) for i in text.split(' ')]
+                str_to_float_lst = [float(i) for i in text.split(' ')]
                 stats = {
-                    'packages': text_lst[0],
-                    'lbs': text_lst[1],
-                    'items': text_lst[2],
-                    'hours': text_lst[3],
-                    'pkg_per_hour': text_lst[0] / text_lst[3],
-                    'lbs_per_pkg': text_lst[1] / text_lst[0],
-                    'items_per_pkg': text_lst[2] / text_lst[0]
+                    'packages': str_to_float_lst[0],
+                    'weight': str_to_float_lst[1],
+                    'items': str_to_float_lst[2],
+                    'hours': str_to_float_lst[3],
+                    'pkg_per_hour': str_to_float_lst[0] / str_to_float_lst[3],
+                    'weight_per_pkg': str_to_float_lst[1] / str_to_float_lst[0],
+                    'items_per_pkg': str_to_float_lst[2] / str_to_float_lst[0]
                 }
                 context['stats'] = stats
                 next()
@@ -38,27 +39,6 @@ def parse_args(context, command, next):
             next()
     else:
         context['text'] = ''
-        next()
-
-
-def calculate_bonus_score(context, next):
-    """
-    Calculate logger score
-    :return: float, logger score
-    """
-    # set the points that each stat is worth
-    if 'stats' in context:
-        pkg_points = 14.7
-        item_points = 2.03
-        lbs_points = 0.99
-
-        stats = context['stats']
-        score = ((pkg_points * stats['packages']) + (item_points * stats['items']) + (lbs_points * stats['lbs'])) / \
-                stats[
-                    'hours']
-        context['score'] = score
-        next()
-    else:
         next()
 
 
@@ -128,7 +108,7 @@ def generate_response(context, next):
         next()
 
 
-@app.command('/bonus', middleware=[fetch_user_id, parse_args, calculate_bonus_score, generate_response])
+@app.command('/bonus', middleware=[fetch_user_id, parse_args, calculate_production_score, generate_response])
 def bonus(ack, respond, context):
     """
     Slash command that calculates logger bonus.
@@ -137,7 +117,6 @@ def bonus(ack, respond, context):
     :output str, formatted bonus report
     :param ack: Something something server acknowledge thingy
     :param respond: slack respond func
-    :param command: dict, payload
     :return: None
     """
     ack()
