@@ -3,7 +3,12 @@ from slack_sdk.errors import SlackApiError
 from apps.global_middleware import fetch_user
 
 
-def welcome_home_blocks(context, next):
+def create_blocks(context, next):
+    context['blocks'] = []
+    next()
+
+
+def create_welcome_home_blocks(context, next):
     user = context['user']
     blocks = [
         {
@@ -15,11 +20,12 @@ def welcome_home_blocks(context, next):
         },
         {"type": "divider"},
     ]
-    context['welcome_home_blocks'] = blocks
+    for block in blocks:
+        context['blocks'].append(block)
     next()
 
 
-def calculator_blocks(context, next):
+def create_calculator_blocks(context, next):
     blocks = [
         {
             "type": "header",
@@ -54,11 +60,12 @@ def calculator_blocks(context, next):
             "type": "divider"
         },
     ]
-    context['calculator_blocks'] = blocks
+    for block in blocks:
+        context['blocks'].append(block)
     next()
 
 
-def context_blocks(context, next):
+def create_context_blocks(context, next):
     blocks = [
         {
             "type": "context",
@@ -73,28 +80,15 @@ def context_blocks(context, next):
             ],
         },
     ]
-    context['context_blocks'] = blocks
+    for block in blocks:
+        context['blocks'].append(block)
     next()
 
 
-def create_blocks(context, next):
-    home_blocks = []
-    block_lst = [
-        context['welcome_home_blocks'],
-        context['calculator_blocks'],
-        context['context_blocks']
-    ]
-    for blocks in block_lst:
-        for block in blocks:
-            home_blocks.append(block)
-    context['blocks'] = home_blocks
-    next()
-
-
-@app.event("app_home_opened", middleware=[fetch_user, welcome_home_blocks,
-                                          calculator_blocks, context_blocks,
-                                          create_blocks])
-def app_home_root_view(context, logger):
+@app.event("app_home_opened", middleware=[fetch_user, create_blocks,
+                                          create_welcome_home_blocks, create_calculator_blocks,
+                                          create_context_blocks])
+def open_app_home_view(context, logger):
     """
     Show home view
     :param context:
