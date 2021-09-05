@@ -11,10 +11,7 @@ from tools.get_payout import get_payout
 from tools.send_mistake_report import MistakeReport
 
 
-def fetch_user(payload, context, next):
-    user = payload["user"]
-    context['user'] = user
-    next()
+
 
 
 def fetch_trigger_id(body, context, event, next):
