@@ -1,28 +1,28 @@
+import os
 import random
 import re
 
 from app import app
 from slack_sdk.errors import SlackApiError
+from slack_bolt.adapter.socket_mode import SocketModeHandler
 
 from tools.middleware import add_points
 from tools.middleware import calculate_payout
-from tools.middleware import calculate_production_score
 from tools.middleware import clear_points
 from tools.middleware import download_file_shared
 from tools.middleware import fetch_points
-from tools.middleware import fetch_root_id
-from tools.middleware import fetch_trigger_id
 from tools.middleware import get_tier_emoji
 from tools.middleware import parse_file_download
 from tools.views import piece_pay_calc_view
 from tools.views import send_mistakes_view
-from tools.views import show_productivity_calc_view
 
 # external app imports (not explicitly called but need to be imported)
 from apps.msg_responses.react_hello import say_hello  # noqa
 from apps.msg_responses.ack_message import ack_message  # noqa
 from apps.app_home_view import open_app_home_view  # noqa
 from apps.slash_cmds.slash_cmd_bonus import bonus  # noqa
+from apps.modal_production_calc.modal_production_calc import show_root_view
+from apps.modal_production_calc.modal_production_calc import show_updated_view
 
 BOT_ID = app.client.auth_test()['user_id']
 
@@ -41,39 +41,11 @@ def global_error_handler(error, body, logger):
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@Slack App Modals and Views@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-# ######################################Productivity Score Calculator Modal#############################################
-# root view
-@app.action('productivity_score_calculator_button_click', middleware=[fetch_trigger_id])
-def productivity_score_calculator_root_view(ack, context, logger):
-    """
-    Open production score calculator when "Production Calculator" is clicked
-    :param context:
-    :param logger:
-    :param ack: slack obj
-    :param body: slack obj, https://slack.dev/bolt-python/api-docs/slack_bolt/kwargs_injection/args.html#slack_bolt.kwargs_injection.args.Args.action
-    :return: None
-    """
-    ack()
-    show_productivity_calc_view(app, SlackApiError, context, logger)
 
-
-# updated view
-@app.view("productivity_score_calculator_view_submission", middleware=[calculate_production_score])
-def productivity_score_calculator_update_root_view(ack, context, logger):
-    """
-    Updated production score calculator modal.
-    :param context:
-    :param logger: logger obj
-    :param ack: slack obj
-    :param view: slack obj
-    :return: None
-    """
-    ack()
-    show_productivity_calc_view(app, SlackApiError, context, logger, ack=ack)
 
 
 # #########################################Piece Pay Calculator Modal###################################################
-# root view
+'''# root view
 @app.action("piece_pay_home_button", middleware=[fetch_trigger_id, fetch_root_id, fetch_points])
 def piece_pay_calc_root_view(ack, context, logger):
     """
@@ -105,7 +77,7 @@ def remove_mistake_block(ack, context, logger):
 def piece_pay_calc_show_results_view(ack, context, logger):
     ack()
     piece_pay_calc_view(app, SlackApiError, context, logger)
-
+'''
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@Send Mistake Reports Listeners@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @app.event('file_shared')
@@ -596,4 +568,7 @@ def acknowledge_file_created(ack, event, logger):
 
 
 if __name__ == '__main__':
-    app.start(port=3000)
+    # socket mode
+    handler = SocketModeHandler(app, os.environ['SLACK_APP_TOKEN'])
+    handler.start()
+    #app.start(port=3000)
