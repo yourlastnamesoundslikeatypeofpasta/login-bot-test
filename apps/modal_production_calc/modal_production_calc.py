@@ -152,53 +152,52 @@ def validate_input(context, next, logger):
 
 
 def create_blocks(context, next):
-    if 'response_action' in context:
+    if 'stats' in context['stats']:
+        stats = context['stats']
+        score = context['score']
+        score_block = [
+            {
+                "type": "section",
+                "fields": [
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Packages/Hour:* `{stats['pkg_per_hour']:.2f}`"
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Weight/Package:* `{stats['weight_per_pkg']:.2f}`"
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Items/Package:* `{stats['items_per_pkg']:.2f}`"
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Productivity Score:* `{score:.2f}` :dash:"
+                    },
+                ]
+            }
+        ]
+        context['new_block'] = score_block
         next()
-        return
-
-    stats = context['stats']
-    score = context['score']
-    score_block = [
-        {
-            "type": "section",
-            "fields": [
-                {
-                    "type": "mrkdwn",
-                    "text": f"*Packages/Hour:* `{stats['pkg_per_hour']:.2f}`"
-                },
-                {
-                    "type": "mrkdwn",
-                    "text": f"*Weight/Package:* `{stats['weight_per_pkg']:.2f}`"
-                },
-                {
-                    "type": "mrkdwn",
-                    "text": f"*Items/Package:* `{stats['items_per_pkg']:.2f}`"
-                },
-                {
-                    "type": "mrkdwn",
-                    "text": f"*Productivity Score:* `{score:.2f}` :dash:"
-                },
-            ]
-        }
-    ]
-    context['new_block'] = score_block
-    next()
+    else:
+        next()
 
 
 def update_view(context, next):
-    if 'response_action' in context:
+    if 'new_block' in context['new_block']:
+
+        # create new view key
+        context['view'] = context['base_view']
+
+        # create new blocks key with updated blocks lst
+        context['blocks'] = context['base_blocks'] + context['new_block']
+
+        # update new view key to point to new blocks key
+        context['view']['blocks'] = context['blocks']
         next()
-        return
-
-    # create new view key
-    context['view'] = context['base_view']
-
-    # create new blocks key with updated blocks lst
-    context['blocks'] = context['base_blocks'] + context['new_block']
-
-    # update new view key to point to new blocks key
-    context['view']['blocks'] = context['blocks']
-    next()
+    else:
+        next()
 
 
 # root view
