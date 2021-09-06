@@ -102,7 +102,7 @@ def get_input_values(context, body, next):
     next()
 
 
-def validate_input(context, next):
+def validate_input(context, next, logger):
     # valid input = starts with digit > 0, all digits, <= 1 decimal
     invalid_block_id_lst = []
     digits = string.digits
@@ -124,32 +124,38 @@ def validate_input(context, next):
 
     # create action response, send response action if inputs are invalid
     if invalid_block_id_lst:
+        logger.debug('invalid blocks')
         response_action = {
             "response_action": "errors",
             "errors": {}
         }
         for block, error in invalid_block_id_lst:
             response_action['errors'][block] = error
-        ack = context['ack']
-        ack(response_action)
-
-    # convert input values to floats and add values to context
-    for key, value in context['input_block_values'].items():
-        context[key] = float(value)
-    stats = {
-        'packages': context['block_packages'],
-        'weight': context['block_weight'],
-        'items': context['block_items'],
-        'hours': context['block_hours'],
-        'pkg_per_hour': context['block_packages'] / context['block_hours'],
-        'weight_per_pkg': context['block_weight'] / context['block_packages'],
-        'items_per_pkg': context['block_items'] / context['block_packages']
-    }
-    context['stats'] = stats
-    next()
+        context['response_action'] = response_action
+        next()
+        return
+    else:
+        # convert input values to floats and add values to context
+        for key, value in context['input_block_values'].items():
+            context[key] = float(value)
+        stats = {
+            'packages': context['block_packages'],
+            'weight': context['block_weight'],
+            'items': context['block_items'],
+            'hours': context['block_hours'],
+            'pkg_per_hour': context['block_packages'] / context['block_hours'],
+            'weight_per_pkg': context['block_weight'] / context['block_packages'],
+            'items_per_pkg': context['block_items'] / context['block_packages']
+        }
+        context['stats'] = stats
+        next()
 
 
 def create_blocks(context, next):
+    if 'response_action' in context:
+        next()
+        return
+
     stats = context['stats']
     score = context['score']
     score_block = [
@@ -180,6 +186,10 @@ def create_blocks(context, next):
 
 
 def update_view(context, next):
+    if 'response_action' in context:
+        next()
+        return
+
     # create new view key
     context['view'] = context['base_view']
 
@@ -211,16 +221,18 @@ def show_root_view(ack, context, logger):
 # updated view
 @app.view("production_calc_submission", middleware=[fetch_base_view, get_input_values,
                                                     validate_input, calculate_production_score,
-                                                    create_blocks,
-                                                    update_view])
+                                                    create_blocks, update_view])
 def show_updated_view(ack, context, logger):
     ack()
-    view = context['view']
-    response_action = {
-        "response_action": "update",
-        "view": view
-    }
-    try:
-        ack(response_action)
-    except SlackApiError as e:
-        logger.error(e)
+    if 'response_action' in context:
+        ack(context['response_action'])
+    else:
+        view = context['view']
+        response_action = {
+            "response_action": "update",
+            "view": view
+        }
+        try:
+            ack(response_action)
+        except SlackApiError as e:
+            logger.error(e)
