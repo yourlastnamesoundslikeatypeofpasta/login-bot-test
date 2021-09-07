@@ -1,6 +1,6 @@
 from app import app
 from slack_sdk.errors import SlackApiError
-from apps.global_middleware import fetch_user_id
+from apps.middleware import fetch_user_id
 
 
 def create_blocks(context, next):
