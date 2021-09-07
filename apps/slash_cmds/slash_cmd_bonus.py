@@ -38,7 +38,7 @@ def parse_args(context, command, next):
         next()
 
 
-def generate_response(context, next):
+def generate_response(context):
     if 'stats' in context:
         # calculated stats str
         stats = context['stats']
@@ -87,27 +87,24 @@ def generate_response(context, next):
                 ]
             }
         ]
-        context['response_blocks'] = blocks
-        next()
+        return blocks
     elif context.get('text') == 'help':
         # help str
         help_str = 'Enter stats in this format (with spaces in between each stat): `/bonus [pkgs] [lbs] [items] [hours]`\n' \
                    '*e.g:* `/bonus 100 200 175 5`'
-        context['response'] = help_str
-        next()
+        return help_str
     else:
         # error str
         error_msg_str = f'*Error:* `Stats not entered correctly.`\n' \
                         f'*Enter:* `"/bonus help"` for help'
-        context['response'] = error_msg_str
-        next()
+        return error_msg_str
 
 
 @app.command('/bonus', middleware=[fetch_user_id,
                                    parse_args,
                                    validate_input,
                                    calculate_production_score,
-                                   generate_response])
+                                   ])
 def bonus(ack, respond, context):
     """
     Slash command that calculates logger bonus.
@@ -119,9 +116,8 @@ def bonus(ack, respond, context):
     :return: None
     """
     ack()
-    if 'response_blocks' in context:
-        blocks = context['response_blocks']
-        respond(blocks=blocks)
+    response = generate_response(context)
+    if type(response) == list:
+        respond(blocks=response)
     else:
-        response = context.get('response')
         respond(response)
