@@ -2,6 +2,7 @@ from app import app
 
 from apps.global_middleware import fetch_user_id
 from apps.global_middleware import calculate_production_score
+from apps.global_middleware import validate_input
 
 
 def parse_args(context, command, next):
@@ -16,20 +17,16 @@ def parse_args(context, command, next):
         text = command['text']
 
         # make sure the exact num of args == 4
-        len_split_text = len(text.split(' '))
-        if len_split_text == 4:
+        split_text = text.split(' ')
+        if len(split_text) == 4:
             try:
-                str_to_float_lst = [float(i) for i in text.split(' ')]
-                stats = {
-                    'packages': str_to_float_lst[0],
-                    'weight': str_to_float_lst[1],
-                    'items': str_to_float_lst[2],
-                    'hours': str_to_float_lst[3],
-                    'pkg_per_hour': str_to_float_lst[0] / str_to_float_lst[3],
-                    'weight_per_pkg': str_to_float_lst[1] / str_to_float_lst[0],
-                    'items_per_pkg': str_to_float_lst[2] / str_to_float_lst[0]
+                input_block_values = {
+                    "block_packages": split_text[0].strip(' '),
+                    "block_weight": split_text[1].strip(' '),
+                    "block_items": split_text[2].strip(' '),
+                    "block_hours": split_text[3].strip(' ')
                 }
-                context['stats'] = stats
+                context['input_block_values'] = input_block_values
                 next()
             except ValueError:
                 next()
@@ -38,7 +35,6 @@ def parse_args(context, command, next):
             context['text'] = text
             next()
     else:
-        context['text'] = ''
         next()
 
 
@@ -93,11 +89,10 @@ def generate_response(context, next):
         ]
         context['response_blocks'] = blocks
         next()
-    elif context['text'] == 'help':
+    elif context.get('text') == 'help':
         # help str
         help_str = 'Enter stats in this format (with spaces in between each stat): `/bonus [pkgs] [lbs] [items] [hours]`\n' \
                    '*e.g:* `/bonus 100 200 175 5`'
-
         context['response'] = help_str
         next()
     else:
@@ -108,7 +103,11 @@ def generate_response(context, next):
         next()
 
 
-@app.command('/bonus', middleware=[fetch_user_id, parse_args, calculate_production_score, generate_response])
+@app.command('/bonus', middleware=[fetch_user_id,
+                                   parse_args,
+                                   validate_input,
+                                   calculate_production_score,
+                                   generate_response])
 def bonus(ack, respond, context):
     """
     Slash command that calculates logger bonus.
@@ -124,5 +123,5 @@ def bonus(ack, respond, context):
         blocks = context['response_blocks']
         respond(blocks=blocks)
     else:
-        response = context['response']
+        response = context.get('response')
         respond(response)
