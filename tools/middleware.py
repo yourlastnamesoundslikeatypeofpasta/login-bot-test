@@ -5,7 +5,6 @@ import datetime
 import requests
 import openpyxl
 
-from tools.production_score import get_production_score
 from tools.send_mistake_report import MistakeReport
 
 
