@@ -1,7 +1,7 @@
 from app import app
 
-from slash_cmd_bonus_helpers import parse_args
-from slash_cmd_bonus_helpers import generate_response
+from apps.slash_cmds.slash_cmd_bonus_helpers import parse_args
+from apps.slash_cmds.slash_cmd_bonus_helpers import generate_response
 from apps.middleware import fetch_user_id
 from apps.middleware import calculate_production_score
 from apps.middleware import validate_input
@@ -12,7 +12,7 @@ from apps.middleware import validate_input
                                    validate_input,
                                    calculate_production_score,
                                    ])
-def bonus(ack, respond, context):
+def calculate_production_score(ack, respond, context):
     """
     Slash command that calculates logger bonus.
     :param context:
