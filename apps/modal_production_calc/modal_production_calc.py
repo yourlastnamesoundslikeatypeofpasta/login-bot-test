@@ -1,9 +1,9 @@
 import string
 
 from app import app
-from apps.global_middleware import fetch_trigger_id
-from apps.global_middleware import validate_input
-from apps.global_middleware import calculate_production_score
+from apps.middleware import fetch_trigger_id
+from apps.middleware import validate_input
+from apps.middleware import calculate_production_score
 from slack_sdk.errors import SlackApiError
 
 
