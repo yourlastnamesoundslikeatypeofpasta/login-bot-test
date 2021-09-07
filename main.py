@@ -14,7 +14,7 @@ from tools.views import send_mistakes_view
 from apps.msg_responses.react_hello import say_hello  # noqa
 from apps.msg_responses.ack_message import ack_message  # noqa
 from apps.app_home_view import open_app_home_view  # noqa
-from apps.slash_cmds.slash_cmd_bonus import bonus  # noqa
+from apps.slash_cmds.slash_cmd_bonus import calculate_production_score  # noqa
 from apps.modal_production_calc import modal_production_calc  # noqa
 from apps.modal_piecepay_calc import modal_piecepay_calc  # noqa
 
