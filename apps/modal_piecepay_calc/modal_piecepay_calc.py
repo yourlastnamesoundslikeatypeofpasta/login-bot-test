@@ -3,9 +3,9 @@ import logging
 
 from app import app
 from slack_sdk.errors import SlackApiError
-from apps.global_middleware import fetch_root_id
-from apps.global_middleware import fetch_trigger_id
-from apps.global_middleware import validate_input
+from apps.middleware import fetch_root_id
+from apps.middleware import fetch_trigger_id
+from apps.middleware import validate_input
 
 
 def fetch_options():
