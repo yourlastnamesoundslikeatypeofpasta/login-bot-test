@@ -6,14 +6,8 @@ from app import app
 from slack_sdk.errors import SlackApiError
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 
-from tools.middleware import add_points
-from tools.middleware import calculate_payout
-from tools.middleware import clear_points
 from tools.middleware import download_file_shared
-from tools.middleware import fetch_points
-from tools.middleware import get_tier_emoji
 from tools.middleware import parse_file_download
-from tools.views import piece_pay_calc_view
 from tools.views import send_mistakes_view
 
 # external app imports (not explicitly called but need to be imported)
@@ -21,8 +15,8 @@ from apps.msg_responses.react_hello import say_hello  # noqa
 from apps.msg_responses.ack_message import ack_message  # noqa
 from apps.app_home_view import open_app_home_view  # noqa
 from apps.slash_cmds.slash_cmd_bonus import bonus  # noqa
-from apps.modal_production_calc.modal_production_calc import show_root_view
-from apps.modal_production_calc.modal_production_calc import show_updated_view
+from apps.modal_production_calc import modal_production_calc  # noqa
+from apps.modal_piecepay_calc import modal_piecepay_calc  # noqa
 
 BOT_ID = app.client.auth_test()['user_id']
 
@@ -40,44 +34,6 @@ def global_error_handler(error, body, logger):
 
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@Slack App Modals and Views@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-
-
-
-# #########################################Piece Pay Calculator Modal###################################################
-'''# root view
-@app.action("piece_pay_home_button", middleware=[fetch_trigger_id, fetch_root_id, fetch_points])
-def piece_pay_calc_root_view(ack, context, logger):
-    """
-    Open piece pay calculator when "Piece Pay Calculator" is clicked
-    :param view:
-    :param context:
-    :param ack: slack obj
-    :param body: slack obj
-    :param logger: slack obj
-    :return: None
-    """
-    ack()
-    piece_pay_calc_view(app, SlackApiError, context, logger)
-
-
-@app.action("mistake_selection", middleware=[fetch_root_id, fetch_points, add_points])
-def piece_pay_calc_add_mistake_block(ack, context, logger):
-    ack()
-    piece_pay_calc_view(app, SlackApiError, context, logger, ack=ack)
-
-
-@app.action("clear_points", middleware=[fetch_root_id, fetch_points, clear_points])
-def remove_mistake_block(ack, context, logger):
-    ack()
-    piece_pay_calc_view(app, SlackApiError, context, logger)
-
-
-@app.view("piece_pay_calc_calculate", middleware=[fetch_points, calculate_payout, get_tier_emoji])
-def piece_pay_calc_show_results_view(ack, context, logger):
-    ack()
-    piece_pay_calc_view(app, SlackApiError, context, logger)
-'''
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@Send Mistake Reports Listeners@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @app.event('file_shared')
@@ -569,6 +525,6 @@ def acknowledge_file_created(ack, event, logger):
 
 if __name__ == '__main__':
     # socket mode
-    handler = SocketModeHandler(app, os.environ['SLACK_APP_TOKEN'])
-    handler.start()
-    #app.start(port=3000)
+    #handler = SocketModeHandler(app, os.environ['SLACK_APP_TOKEN'])
+    #handler.start()
+    app.start(port=3000)
