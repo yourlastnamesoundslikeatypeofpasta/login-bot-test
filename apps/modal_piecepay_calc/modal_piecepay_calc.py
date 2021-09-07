@@ -205,9 +205,12 @@ def create_points_block(context, next):
 
 
 def create_payout_block(context, next):
+    if 'response_action' in context:
+        next()
+        return
     tier_value = context['tier_value']
     tier_emoji = get_tier_emoji(tier_value)
-    score_block = {
+    score_block = [{
         "type": "section",
         "fields": [
             {
@@ -231,7 +234,7 @@ def create_payout_block(context, next):
                 "text": f"*Payout:moneybag::* `{context['payout']:.2f}`"
             },
         ],
-    }
+    }]
     context['score_block'] = score_block
     next()
 
@@ -243,7 +246,7 @@ def fetch_base_view(context, next):
     base_blocks = [
         {
             "type": "input",
-            "block_id": "block_package",
+            "block_id": "block_packages",
             "element": {
                 "type": "plain_text_input",
                 "action_id": "package_input",
@@ -390,16 +393,41 @@ def fetch_base_view(context, next):
 
 
 def update_base_view(context, next):
+    if 'response_action' in context:
+        next()
+        return
+    context['view'] = context['base_view']
+
+    context['blocks'] = context['base_blocks'] + context['score_block']
+
+    context['view']['blocks'] = context['blocks']
     next()
 
 
-def get_input_values(context, next):
+def get_input_values(body, context, next):
+    block_packages = body['view']['state']['values']['block_packages']['package_input']['value'].strip(' ')
+    block_weight = body['view']['state']['values']['block_weight']['weight_input']['value'].strip(' ')
+    block_items = body['view']['state']['values']['block_items']['item_input']['value'].strip(' ')
+    block_tier = body['view']['state']['values']['block_tier']['static_tier_select']['selected_option']['value']
+    context['tier_value'] = block_tier
+
+    # store values in context
+    input_block_values = {
+        "block_packages": block_packages,
+        "block_weight": block_weight,
+        "block_items": block_items,
+
+    }
+    context['input_block_values'] = input_block_values
     next()
 
 
 def calculate_payout(body, context, next):
-    # get stats
-    package_count = body['view']['state']['values']['block_package']['package_input']['value']
+    if 'response_action' in context:
+        next()
+        return
+    # get stats  # todo: remove and use context stats
+    package_count = body['view']['state']['values']['block_packages']['package_input']['value']
     weight_count = body['view']['state']['values']['block_weight']['weight_input']['value']
     item_count = body['view']['state']['values']['block_items']['item_input']['value']
     tier = body['view']['state']['values']['block_tier']['static_tier_select']['selected_option']['text']['text']
@@ -492,7 +520,16 @@ def remove_mistake_block(ack, context, logger):
                                                   update_base_view, ])
 def piece_pay_calc_show_results_view(ack, context, logger):
     ack()
-    response_action = context
+    if 'response_action' in context:
+        response_action = context.get('response_action')
+        ack(response_action)
+    else:
+        view = context.get('view')
+        response_action = {
+            'response_action': 'update',
+            'view': view
+        }
+        ack(response_action)
 
     def piece_pay_calc_view(app, slackapierror, context, logger, ack=None):
 
