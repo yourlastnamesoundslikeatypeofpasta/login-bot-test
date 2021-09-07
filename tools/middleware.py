@@ -6,71 +6,7 @@ import requests
 import openpyxl
 
 from tools.production_score import get_production_score
-from tools.get_payout import get_payout
 from tools.send_mistake_report import MistakeReport
-
-
-def fetch_points(body, context, next):
-    points = body['view']['private_metadata']
-    if points == '':
-        context['points'] = '0'
-    else:
-        context['points'] = points
-    next()
-
-
-def clear_points(body, context, next):
-    context["points"] = "0"
-    context['points_cleared'] = True
-    next()
-
-
-def add_points(body, context, next):
-    selected_mistake = \
-        body['view']['state']['values']['block_mistake_static_select']['mistake_selection']['selected_option']['value']
-    selected_mistake_point_value = int(selected_mistake.split("_")[1])
-    current_points = int(context['points'])
-    context['points'] = str(current_points + selected_mistake_point_value)
-    next()
-
-
-def calculate_payout(body, context, next):
-    # get stats
-    package_count = body['view']['state']['values']['block_package']['package_input']['value']
-    weight_count = body['view']['state']['values']['block_weight']['weight_input']['value']
-    item_count = body['view']['state']['values']['block_items']['item_input']['value']
-    tier = body['view']['state']['values']['block_tier']['static_tier_select']['selected_option']['text']['text']
-    tier_value = body['view']['state']['values']['block_tier']['static_tier_select']['selected_option']['value']
-
-    # add stats to context
-    context['package_count'] = package_count
-    context['weight_count'] = weight_count
-    context['item_count'] = item_count
-    context['item_count'] = item_count
-    context['tier'] = tier
-    context['tier_value'] = tier_value
-
-    # calculate payout and add to context
-    package_count = float(package_count)
-    weight_count = float(weight_count)
-    item_count = float(item_count)
-    points = int(context['points'])
-    payout = get_payout(package_count, weight_count, item_count, tier_value, points)
-    context["payout"] = payout
-    next()
-
-
-def get_tier_emoji(context, next):
-    # choose emoji according to tier
-    if context['tier_value'] == 'tier_1':
-        context['tier_emoji'] = ':baby:'
-    elif context['tier_value'] == 'tier_2':
-        context['tier_emoji'] = ':child:'
-    elif context['tier_value'] == 'tier_3':
-        context['tier_emoji'] = ':older_man:'
-    else:
-        context['tier_emoji'] = ''
-    next()
 
 
 def download_file_shared(body, context, event, message, next, logger):
